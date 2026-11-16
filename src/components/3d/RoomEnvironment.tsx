@@ -5,8 +5,9 @@
 // quedan invisibles (corte tipo diorama). Eje +x = pared derecha, -x = ventana, -z = fondo.
 import React, { useEffect, useMemo } from 'react';
 import * as THREE from 'three';
-import { Sparkles } from '@react-three/drei';
+import { Sparkles, Html } from '@react-three/drei';
 import { Ink, RBox } from './parts';
+import { MonitorOS } from '@/components/os/MonitorOS';
 import {
   lightBeamTexture,
   paintedWallTexture,
@@ -280,6 +281,15 @@ function Monitor() {
       <mesh name="monitor-screen" position={[0, 0.38, 0.022]}>
         <planeGeometry args={[0.9, 0.52]} />
         <meshBasicMaterial color="#0284c7" />
+        <Html
+          transform
+          occlude
+          distanceFactor={0.52}
+          position={[0, 0, 0.002]}
+          className="pointer-events-auto"
+        >
+          <MonitorOS />
+        </Html>
       </mesh>
     </group>
   );

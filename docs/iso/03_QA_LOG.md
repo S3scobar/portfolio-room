@@ -2,56 +2,61 @@
 *(Antigravity registra aquí pruebas de consola y capturas; Gemini Pro registra observaciones visuales y aprobaciones).*
 
 ## Sprint 1: Entorno 3D Base, Atmósfera Mixtape/LiS y Decoración Personal
+*(Completado y aprobado con el entorno diorama procedural, 16 artefactos y Milo)*
 
-### Fecha de Ejecución: 2026-11-15 23:35 (Local)
+---
+
+## Sprint 2: Personaje Jugable, Interacción por Proximidad y Mini-OS del Monitor
+
+### Fecha de Ejecución: 2026-11-16 12:30 (Local)
 **Ejecutor:** Antigravity (Ingeniero de Implementación y Ejecutor QA)
 
----
+### 1. Verificación de Compilación y Tipos (`npm run build`)
+- **Comando:** `npm run build`
+- **Resultado:** Exitoso (código de salida 0).
+- **Detalle de logs:**
+  * Next.js 16.4.6 (Turbopack)
+  * Verificación TypeScript completada con 0 errores y 0 advertencias.
+  * Rutas estáticas generadas: `/` y `/_not-found`.
 
-### Observación de Revisión Visual (QA Iterativo):
-> **Hallazgos de la primera inspección:**
-> 1. El entorno base carecía de mobiliario estructural complementario (escritorio amplio, silla ergonómica, monitor de cabecera, repisas flotantes, cama y alfombra).
-> 2. La iluminación global resultaba demasiado oscura y tenue, dificultando la visibilidad de los detalles en paredes, muebles y pósters.
-> 3. Las banderas de la UNAL y de Águilas Doradas presentaban tonos desaturados y sin la viveza ni tipografía representativa de la identidad institucional y deportiva.
-> 4. Existían objetos flotando o superponiéndose a la sección de la ventana en la pared izquierda.
+### 2. Implementación S2-T3 (HUD de Proximidad estilo Life is Strange)
+- Archivo: `src/components/ui/RoomOverlay.tsx`
+- **Comportamiento:**
+  * Lee `nearbyTargetId` del estado global de Zustand (`useRoomStore`).
+  * Cuando el avatar se aproxima a un artefacto a menos de 0.95 m (con histéresis de 1.10 m), despliega el prompt elegante:
+    - Artefactos: `[E] Inspeccionar <Nombre del objeto>` (ej. `Milo (Gato)`, `Undesirable No. 1`, etc.).
+    - Escritorio (`desk-pc`): `[E] Sentarse en el PC`.
+  * Escucha global de teclado:
+    - Tecla `E`: ejecuta la acción correspondiente (`selectArtifact` o `setIsAtDesk(true)`). Se ignora si el foco está en campos de texto.
+    - Tecla `Escape`: cierra la ficha narrativa activa o levanta al personaje del escritorio (`setIsAtDesk(false)`).
+  * Soporta interacción dual: pulsación de tecla o clic directo sobre el botón del HUD.
+  * Se oculta automáticamente cuando el personaje está sentado frente al monitor o tiene una ficha abierta.
 
----
+### 3. Implementación S2-T4 (Mini-OS en el Monitor)
+- Archivo: `src/components/os/MonitorOS.tsx`
+- Montado en: `src/components/3d/RoomEnvironment.tsx` sobre la malla `monitor-screen` usando `<Html transform occlude distanceFactor={0.52} className="pointer-events-auto">`.
+- **Características:**
+  * Barra superior de estado con título `LUKA OS · v2.6`, luces indicadoras y botón `Levantarse` (que ejecuta `setIsAtDesk(false)`).
+  * Escritorio con cuadrícula de accesos directos para **LUKA** y las 12 webs de `src/data/appsRegistry.ts` con sus iconos de Lucide y colores temáticos.
+  * Ventana emergente al hacer clic en cualquier app con:
+    - Barra de título, tagline y enlaces al repositorio en GitHub.
+    - Botón para abrir directamente en nueva pestaña en caso de bloqueos por políticas `X-Frame-Options`.
+    - Contenedor con `iframe` embebido y banner de respaldo.
+    - Botón de cierre `X` que invoca `closeApp()`.
+  * Barra de tareas inferior (Dock) con acceso directo al Escritorio y reloj en tiempo real.
 
-### Parche Visual Aplicado y Verificado:
+### 4. Pruebas Dinámicas en Navegador (`http://localhost:3000`)
+- **Subagente:** Browser QA Tester (id `68348183-59d4-4b50-8acd-8e6a779701fd`)
+- **Origen verificado:** `http://localhost:3000` (HTTP 200 OK)
+- **Captura de pantalla de evidencia:** `browser_evidence/68348183-59d4-4b50-8acd-8e6a779701fd/final_step_8.png`
+- **Flujo comprobado:**
+  1. Carga inicial con `PlayerCharacter` en buzo azul, gato Milo e iluminación atardecer.
+  2. Detección de proximidad y despliegue del HUD flotante.
+  3. Activación con tecla `E` / clic en `[E] Sentarse en el PC`: la cámara realiza el tween suave de GSAP hacia el monitor y el avatar se sienta frente al teclado.
+  4. Apertura y funcionamiento del Mini-OS en pantalla, navegación por apps y apertura de ventanas.
+  5. Salida del escritorio mediante el botón "Levantarse" y tecla `Escape`, con retorno suave a la cámara de seguimiento.
+  6. 0 excepciones en la consola del navegador.
 
-#### 1. Mobiliario Estilizado Low-Poly (`src/components/3d/RoomFurniture.tsx`):
-- **Escritorio amplio:** Madera cálida (`#8b5a2b`) con patas de metal oscuro situado contra la pared del fondo.
-- **Monitor de PC:** Soporte y marco estilizados con la pantalla identificada con el nombre `monitor-screen` centrada y lista como ancla del Mini-OS para el Sprint 2.
-- **Silla de estudio:** Con asiento acolchado azul/gris, respaldo y base giratoria frente al escritorio.
-- **Repisas flotantes:** Dos estantes de madera en la pared del fondo sobre el escritorio (niveles `y = 1.6` y `y = 2.1`).
-- **Alfombra azul:** En el centro del piso de madera (`#1e3a8a` con ribete celeste).
-- **Cama sencilla:** En la esquina derecha con base de madera, colchón crema, almohada y cobija azul (`#1d4ed8`).
-- **Ventana luminosa de atardecer:** En la pared izquierda, con marco de madera y vidrio emisivo cálido (`#ff9e5e`), actuando como foco emisor de la golden hour.
-
-#### 2. Iluminación Golden Hour (Mixtape / Life is Strange):
-- Incorporación de `hemisphereLight` (`intensity={1.1}`, cielo dorado `#ffe8cc` y suelo azul `#3b5998`).
-- `directionalLight` dorada cálida (`#ffb36b`, `intensity={2.4}`) entrando diagonalmente por la ventana con sombras suaves (`PCFShadowMap`, `bias={-0.0005}`).
-- Luz puntual azul suave (`#38bdf8`) cerca del monitor y foco cálido de atardecer en la ventana (`#ff9e5e`).
-- `EffectComposer` ajustado con Bloom luminoso, Vignette y ToneMapping Filmic.
-
-#### 3. Banderas y Reubicación de Artefactos (`src/data/roomLore.ts`):
-- **Bandera UNAL:** Generada en Canvas 2D con franjas verde esmeralda y blanco, escudo central y textos oficiales de la Facultad de Minas / Ingeniería de Sistemas.
-- **Bandera Águilas Doradas:** Fondo dorado vibrante (`#D4AF37`) con franjas negras diagonales y tipografía del Oriente Antioqueño.
-- **Coordenadas y apoyos recalibrados:**
-  * Banderas UNAL y Águilas Doradas: Colgadas en la pared derecha (`x = 2.44`).
-  * Pósters (Harry Potter, Interstellar, Dune, CR7): Colocados en muros libres sin tapar la ventana.
-  * Libros y luz Lumos Maxima: Apoyados en las repisas flotantes.
-  * Xbox Series S, Cubo Rubik, Milo, Escarapela, Audífonos y Snoopy: Apoyados firmemente sobre el escritorio.
-  * Ukelele apoyado contra el lateral del escritorio y Morral Totto sobre el piso.
-
----
-
-### Evidencia de Pruebas:
-1. **Compilación TypeScript (`npm run build`):**
-   - 0 errores de TypeScript y 0 errores de Turbopack (código de salida 0).
-   - Generación estática limpia de todas las rutas.
-2. **Navegador en vivo (`http://localhost:3000`):**
-   - Origen verificado por host: `http://localhost:3000`.
-   - Captura de pantalla de evidencia: `browser_evidence/9bdb1d25-e8a3-40bb-af61-c88877413670/final_step_4.png`.
-   - Consola: 0 errores críticos ni avisos de colisión en Leva (claves únicas por objeto).
-   - Rendimiento: 60 FPS estables con OrbitControls restringidos y modales narrativos 100% interactivos.
+### 5. Estado de las Tareas
+- `S2-T3`: `[LISTO_PARA_QA]`
+- `S2-T4`: `[LISTO_PARA_QA]`
