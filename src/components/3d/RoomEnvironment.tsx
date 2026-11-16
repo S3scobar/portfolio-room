@@ -39,6 +39,7 @@ function Floor() {
 function Walls() {
   const back = useMemo(() => paintedWallTexture('#f1dcb4', 11, [2.5, 1.5]), []);
   const right = useMemo(() => paintedWallTexture('#eed3a6', 23, [2.5, 1.5]), []);
+  const front = useMemo(() => paintedWallTexture('#f1dcb4', 51, [2.5, 1.5]), []);
   const left = useMemo(() => paintedWallTexture('#d9a07e', 37, [0.5, 0.5]), []);
   const leftShape = useMemo(() => {
     const s = new THREE.Shape();
@@ -63,6 +64,11 @@ function Walls() {
         <planeGeometry args={[ROOM.half * 2, H]} />
         <meshStandardMaterial map={back} roughness={0.95} />
       </mesh>
+      {/* Pared frontal (z = +half), normal hacia adentro: visible desde dentro, invisible desde la camara exterior. */}
+      <mesh position={[0, H / 2, ROOM.half]} rotation={[0, Math.PI, 0]} receiveShadow>
+        <planeGeometry args={[ROOM.half * 2, H]} />
+        <meshStandardMaterial map={front} roughness={0.95} />
+      </mesh>
       <mesh position={[ROOM.half, H / 2, 0]} rotation={[0, -Math.PI / 2, 0]} receiveShadow>
         <planeGeometry args={[ROOM.half * 2, H]} />
         <meshStandardMaterial map={right} roughness={0.95} />
@@ -81,6 +87,7 @@ function Baseboards() {
   return (
     <group name="baseboards">
       <RBox size={[len, 0.12, 0.03]} r={0.008} color={CREAM} ink={0.006} position={[0, 0.06, -ROOM.half + 0.015]} />
+      <RBox size={[len, 0.12, 0.03]} r={0.008} color={CREAM} ink={0.006} position={[0, 0.06, ROOM.half - 0.015]} />
       <RBox size={[len, 0.12, 0.03]} r={0.008} color={CREAM} ink={0.006} position={[ROOM.half - 0.015, 0.06, 0]} rotation={[0, Math.PI / 2, 0]} />
       <RBox size={[len, 0.12, 0.03]} r={0.008} color={CREAM} ink={0.006} position={[-ROOM.half + 0.015, 0.06, 0]} rotation={[0, Math.PI / 2, 0]} />
     </group>
@@ -321,7 +328,8 @@ function Shelves() {
 
 function Bed() {
   return (
-    <group position={[1.55, 0, 0.4]} name="bed">
+    // Cabecera contra la pared izquierda, bajo la bandera de Aguilas Doradas (z = 2.0).
+    <group position={[-1.365, 0, 1.9]} rotation={[0, Math.PI / 2, 0]} name="bed">
       <RBox size={[1.1, 0.3, 2.1]} r={0.03} color="#8b5a35" position={[0, 0.17, 0]} />
       <RBox size={[1.12, 0.62, 0.07]} r={0.03} color="#7a4a29" position={[0, 0.46, -1.07]} />
       <RBox size={[1.04, 0.16, 2.0]} r={0.05} color="#f1e3c8" rough={0.9} position={[0, 0.39, 0]} />
