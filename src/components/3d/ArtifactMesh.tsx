@@ -1,10 +1,11 @@
 'use client';
 
-import React, { useRef, useState } from 'react';
+import React, { useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import type { RoomArtifact } from '@/types/room';
 import { useRoomStore } from '@/store/useRoomStore';
+import { isPointerLocked } from '@/lib/pointerLock';
 import { CustomArtifactModel } from './CustomArtifacts';
 
 interface ArtifactMeshProps {
@@ -14,11 +15,15 @@ interface ArtifactMeshProps {
 /**
  * Envoltorio de interaccion (hover, clic, escala animada) de un artefacto.
  * La geometria la aporta `CustomArtifactModel` (modelos procedurales, sin cajas con foto estirada).
+ *
+ * El hover vive en el store (`hoveredArtifactId`): lo escribe R3F con el cursor libre y la mira de
+ * `CameraController` con el cursor capturado (primera persona). Con el cursor capturado los eventos de puntero
+ * de R3F se ignoran, porque el navegador congela las coordenadas del cursor.
  */
 export function ArtifactMesh({ artifact }: ArtifactMeshProps) {
   const meshRef = useRef<THREE.Group>(null);
-  const [hovered, setHovered] = useState(false);
 
+  const hovered = useRoomStore((state) => state.hoveredArtifactId === artifact.id);
   const selectedArtifactId = useRoomStore((state) => state.selectedArtifactId);
   const selectArtifact = useRoomStore((state) => state.selectArtifact);
   const setHoveredArtifact = useRoomStore((state) => state.setHoveredArtifact);
@@ -37,20 +42,21 @@ export function ArtifactMesh({ artifact }: ArtifactMeshProps) {
   });
 
   const handlePointerOver = (e: { stopPropagation: () => void }) => {
+    if (isPointerLocked()) return;
     e.stopPropagation();
-    setHovered(true);
     setHoveredArtifact(artifact.id);
     document.body.style.cursor = 'pointer';
   };
 
   const handlePointerOut = (e: { stopPropagation: () => void }) => {
+    if (isPointerLocked()) return;
     e.stopPropagation();
-    setHovered(false);
-    setHoveredArtifact(null);
+    if (useRoomStore.getState().hoveredArtifactId === artifact.id) setHoveredArtifact(null);
     document.body.style.cursor = 'auto';
   };
 
   const handleClick = (e: { stopPropagation: () => void }) => {
+    if (isPointerLocked()) return;
     e.stopPropagation();
     selectArtifact(isSelected ? null : artifact.id);
   };

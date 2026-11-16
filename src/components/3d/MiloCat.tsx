@@ -10,6 +10,7 @@ import * as THREE from 'three';
 import { Ink } from './parts';
 import { useRoomStore } from '@/store/useRoomStore';
 import { CAT_WAYPOINTS, buildNeighbors } from '@/lib/catNavigation';
+import { isPointerLocked } from '@/lib/pointerLock';
 import type { CatBehavior } from '@/types/room';
 
 /** Id del lore cuya ficha se muestra al hacer clic en el gato. */
@@ -161,7 +162,6 @@ export interface MiloCatProps {
 
 export function MiloCat({ pose }: MiloCatProps) {
   const root = useRef<THREE.Group>(null);
-  const hovered = useRef(false);
   const sim = useRef<CatSim | null>(null);
   const rig = useRef<{ pitch: THREE.Object3D; head: THREE.Object3D; tailBase: THREE.Object3D; legs: LegRefs[]; tail: (THREE.Object3D | null)[] } | null>(null);
   const neighbors = useMemo(() => buildNeighbors(), []);
@@ -194,8 +194,9 @@ export function MiloCat({ pose }: MiloCatProps) {
     const walkAmt = 1 - sit;
     const swing = Math.sin(s.phase) * 0.55 * walkAmt;
 
-    // Posicion, orientacion y leve escala en hover
-    g.scale.setScalar(THREE.MathUtils.lerp(g.scale.x, hovered.current ? 1.07 : 1, Math.min(1, dt * 10)));
+    // Posicion, orientacion y leve escala en hover (el hover viene del store: cursor libre o mira)
+    const isHover = useRoomStore.getState().hoveredArtifactId === MILO_LORE_ID;
+    g.scale.setScalar(THREE.MathUtils.lerp(g.scale.x, isHover ? 1.07 : 1, Math.min(1, dt * 10)));
     g.position.set(s.x, Math.abs(Math.sin(s.phase * 2)) * 0.006 * walkAmt, s.z);
     g.rotation.y = s.yaw;
 
@@ -242,18 +243,19 @@ export function MiloCat({ pose }: MiloCatProps) {
       ref={root}
       name="milo-cat"
       onPointerOver={(e) => {
+        if (isPointerLocked()) return;
         e.stopPropagation();
-        hovered.current = true;
         setHover(MILO_LORE_ID);
         document.body.style.cursor = 'pointer';
       }}
       onPointerOut={(e) => {
+        if (isPointerLocked()) return;
         e.stopPropagation();
-        hovered.current = false;
-        setHover(null);
+        if (useRoomStore.getState().hoveredArtifactId === MILO_LORE_ID) setHover(null);
         document.body.style.cursor = 'auto';
       }}
       onClick={(e) => {
+        if (isPointerLocked()) return;
         e.stopPropagation();
         const current = useRoomStore.getState().selectedArtifactId;
         select(current === MILO_LORE_ID ? null : MILO_LORE_ID);

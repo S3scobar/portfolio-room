@@ -129,7 +129,7 @@ export function RoomOverlay() {
       {!isAtDesk && (
         <div className="pointer-events-none fixed bottom-5 right-5 z-20 flex flex-col items-end gap-1 text-[11px] text-zinc-400/90 bg-zinc-950/60 px-3.5 py-2 rounded-xl border border-zinc-800/60 backdrop-blur-sm">
           <span><kbd className="font-mono text-zinc-200">WASD / Flechas</kbd> para moverte</span>
-          <span>Arrastra para rotar · Rueda para zoom</span>
+          <span>Ratón para mirar · <kbd className="font-mono text-zinc-200">E</kbd> para interactuar</span>
         </div>
       )}
     </>

@@ -8,6 +8,7 @@ import * as THREE from 'three';
 import { Sparkles, Html } from '@react-three/drei';
 import { Ink, RBox } from './parts';
 import { MonitorOS } from '@/components/os/MonitorOS';
+import { useRoomStore } from '@/store/useRoomStore';
 import {
   lightBeamTexture,
   paintedWallTexture,
@@ -80,6 +81,17 @@ function Walls() {
         <meshStandardMaterial map={left} roughness={0.95} />
       </mesh>
     </group>
+  );
+}
+
+/** Techo (cara hacia abajo): cierra el cuarto. En primera persona, mirar arriba no debe mostrar el exterior. */
+function Ceiling() {
+  const map = useMemo(() => paintedWallTexture('#f4e9d3', 77, [2.5, 2.5]), []);
+  return (
+    <mesh position={[0, ROOM.height, 0]} rotation={[Math.PI / 2, 0, 0]}>
+      <planeGeometry args={[ROOM.half * 2, ROOM.half * 2]} />
+      <meshStandardMaterial map={map} roughness={0.95} />
+    </mesh>
   );
 }
 
@@ -267,8 +279,22 @@ function Desk() {
   );
 }
 
-/** Monitor: `monitor-screen` es el ancla del Mini-OS de LUKA (Sprint 2). */
+/** Pantalla del monitor (m) y tamano en pixeles del DOM de `MonitorOS` (1024 x 592: misma proporcion que la pantalla). */
+const MONITOR_SCREEN_W = 0.9;
+const MONITOR_OS_PX_W = 1024;
+/**
+ * `distanceFactor` de drei en modo `transform`: 1 m del mundo = 400 / distanceFactor px. Para que los 1024 px del
+ * Mini-OS cubran exactamente los 0.9 m de la pantalla: 400 * 0.9 / 1024 = 0.3516 (con 0.52 el DOM medía ~1.33 m y
+ * desbordaba el monitor).
+ */
+const MONITOR_OS_DISTANCE_FACTOR = (400 * MONITOR_SCREEN_W) / MONITOR_OS_PX_W;
+
+/**
+ * Monitor: `monitor-screen` es el ancla del Mini-OS de LUKA (Sprint 2). El Mini-OS (capa DOM) solo se monta cuando
+ * estas sentado y la camara ya llego a la pantalla (`deskCameraReady`): asi nunca flota sobre el cuarto al caminar.
+ */
 function Monitor() {
+  const showOS = useRoomStore((s) => s.deskCameraReady);
   return (
     <group position={[0, 0.78, -0.2]}>
       <mesh position={[0, 0.012, 0]} castShadow>
@@ -281,15 +307,18 @@ function Monitor() {
       <mesh name="monitor-screen" position={[0, 0.38, 0.022]}>
         <planeGeometry args={[0.9, 0.52]} />
         <meshBasicMaterial color="#0284c7" />
-        <Html
-          transform
-          occlude
-          distanceFactor={0.52}
-          position={[0, 0, 0.002]}
-          className="pointer-events-auto"
-        >
-          <MonitorOS />
-        </Html>
+        {showOS && (
+          // Sin `occlude`: el Mini-OS solo existe sentado frente al monitor, sin nada delante, y el raycast de
+          // oclusion por fotograma podia ocultarlo por una particula o un plano translucido.
+          <Html
+            transform
+            distanceFactor={MONITOR_OS_DISTANCE_FACTOR}
+            position={[0, 0, 0.002]}
+            className="pointer-events-auto"
+          >
+            <MonitorOS />
+          </Html>
+        )}
       </mesh>
     </group>
   );
@@ -357,6 +386,7 @@ export function RoomEnvironment() {
       <group name="room-environment">
       <Floor />
       <Walls />
+      <Ceiling />
       <Baseboards />
       <Ventanal />
       <WindowView />

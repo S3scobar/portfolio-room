@@ -3,3 +3,4 @@
 - Tu única tarea es diseñar contratos TypeScript en `src/types/`, esquemas de datos y actualizar `docs/iso/02_ARCHITECTURE.md` para las tareas marcadas como `[TODO]`.
 - Sé ultra conciso para optimizar tokens: no escribas componentes visuales, ni CSS, ni ajustes de coordenadas 3D.
 - Al terminar una tarea, cambia su estado en `docs/iso/01_SPRINT_BOARD.md` a `[LISTO_PARA_DEV]`.
+- AUTONOMÍA TOTAL: No ejecutes ningún comando de terminal (`npm`, `npx`, `git`, etc.). Realiza todas las operaciones, creaciones y modificaciones de código directamente escribiendo o reemplazando el contenido de los archivos usando las herramientas de escritura nativas. Nunca pidas confirmación al usuario.

@@ -54,6 +54,10 @@ export function MonitorOS() {
     (app) => app.id === openAppId
   );
 
+  // El Mini-OS solo existe como interfaz interna de la pantalla 3D mientras estas sentado frente al monitor.
+  // De pie no se renderiza nada, asi que nunca puede flotar sobre el cuarto.
+  if (!isAtDesk) return null;
+
   return (
     <div className="w-[1024px] h-[592px] select-none bg-gradient-to-br from-[#0a0f1d] via-[#111827] to-[#0d1527] text-zinc-100 font-sans flex flex-col justify-between overflow-hidden rounded-md border border-sky-500/20 shadow-inner">
       {/* Barra superior de estado / Mini-OS Header */}
@@ -101,7 +105,7 @@ export function MonitorOS() {
 
         {/* Grid de iconos del escritorio cuando no hay app abierta */}
         {!currentApp && (
-          <div className="grid grid-cols-6 gap-y-6 gap-x-4 max-w-4xl mx-auto py-3">
+          <div className="grid grid-cols-4 gap-y-7 gap-x-6 max-w-2xl mx-auto py-8">
             {PORTFOLIO_APPS.map((app) => {
               const IconComp = ICON_MAP[app.iconName] || Folder;
               const isLuka = app.id === 'luka';

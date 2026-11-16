@@ -22,9 +22,11 @@ function SceneLoader() {
 export function RoomCanvas() {
   return (
     <div className="relative w-full h-screen bg-[#0d1117] overflow-hidden">
+      {/* Primera persona: ojos a 1.7 m sobre el punto de aparicion. CameraController la mueve cada fotograma;
+          estos valores solo fijan el FOV (70) y el plano cercano (0.05 m, para poder pegarse a las paredes). */}
       <Canvas
         shadows
-        camera={{ position: [3.8, 3.2, 4.2], fov: 45 }}
+        camera={{ position: [0.9, 1.7, 0.9], fov: 70, near: 0.05, far: 100 }}
         gl={{ antialias: true, alpha: false }}
         className="w-full h-full"
       >
@@ -32,7 +34,7 @@ export function RoomCanvas() {
           {/* Atmósfera y luces golden hour con acento ventana */}
           <Atmosphere />
 
-          {/* Controlador de cámara con restricciones que impiden cruzar muros y piso */}
+          {/* Cámara en primera persona (ratón para mirar, mira central) y transición al monitor al sentarse */}
           <CameraController />
 
           {/* Entorno procedural: paredes, piso, zócalos, ventanal con cielo, haz de luz y mobiliario con contorno de tinta */}
@@ -41,10 +43,10 @@ export function RoomCanvas() {
           {/* Milo: gato 3D que camina solo por el suelo; clic abre su ficha (photo-milo) */}
           <MiloCat />
 
-          {/* Avatar jugable: WASD/flechas, colisiones, proximidad y sentarse en el escritorio */}
+          {/* Controlador del jugador (sin avatar visible): WASD/flechas, colisiones, proximidad y asiento */}
           <PlayerCharacter />
 
-          {/* Gestor y renderizador de los 16 artefactos del lore con calibración Leva */}
+          {/* Gestor de los artefactos del lore: transforms fijos de roomLore.ts (calibración Leva solo con NEXT_PUBLIC_CALIBRATION=1) */}
           <ArtifactsManager>
             {(artifacts) => (
               <group name="artifacts-group">

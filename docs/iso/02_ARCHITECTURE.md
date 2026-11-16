@@ -98,68 +98,78 @@ Las texturas `poster-cr7` son una tarjeta de texto generada (placeholder); `post
 ### Estado del jugador (`PlayerState`, mezclado en `RoomState`)
 | Campo | Tipo | Descripción |
 |---|---|---|
-| `playerPosition` | `Vec3` | Pies del avatar, en metros. Inicial `[0.9, 0, 0.9]`. |
-| `playerRotationY` | `number` | Yaw en radianes. 0 mira a +z; `π` mira a −z (hacia el escritorio). Inicial `π`. |
+| `playerPosition` | `Vec3` | Pies del jugador, en metros (los ojos van 1.7 m más arriba). Inicial `[0.9, 0, 0.9]`. |
+| `playerRotationY` | `number` | Yaw de la mirada en radianes (sale de la cámara). 0 mira a +z; `π` mira a −z (hacia el escritorio). Inicial `π`. |
 | `nearbyTargetId` | `string \| null` | Objetivo interactuable más cercano a < 0.95 m: `'desk-pc'` o un `id` de `ROOM_LORE` (Milo = `'photo-milo'`). |
-| `isAtDesk` | `boolean` | Avatar sentado frente al monitor. |
+| `isAtDesk` | `boolean` | Jugador sentado frente al monitor. |
+| `deskCameraReady` | `boolean` | (en `RoomState`, no en `PlayerState`) La cámara ya llegó al monitor. Monta el Mini-OS. |
 | `openAppId` | `string \| null` | `id` de `PORTFOLIO_APPS` abierta en el Mini-OS. |
 
 Acciones y reglas (las implementa `useRoomStore`; Antigravity solo las llama):
-- `setIsAtDesk(true)`: `cameraMode='desk'`, `selectedArtifactId=null`, `nearbyTargetId=null`. `setIsAtDesk(false)`: `openAppId=null`, `cameraMode='orbit'`. Es idempotente.
+- `setIsAtDesk(true)`: `cameraMode='desk'`, `selectedArtifactId=null`, `nearbyTargetId=null`, `deskCameraReady=false`. `setIsAtDesk(false)`: `openAppId=null`, `cameraMode='orbit'`, `deskCameraReady=false`. Es idempotente. `setDeskCameraReady(v)` lo llama `CameraController`.
+- `cameraMode='orbit'` ya no es una órbita: significa **vista libre en primera persona** (el nombre se conserva por compatibilidad del contrato).
 - `openApp(id)`: **solo tiene efecto sentado**; de pie no hace nada. `closeApp()`: `openAppId=null`.
 - `setPlayerPose(pos, yaw)` y `setNearbyTarget(id)`: los llama `PlayerCharacter`. La pose se publica solo si cambia más de 4 mm o 0.01 rad; `setNearbyTarget` no emite si el valor no cambia (los suscriptores no se re-renderizan por fotograma).
 - `selectArtifact` / `closeArtifact` respetan el escritorio: sentado, `cameraMode` se queda en `'desk'`.
-- Para el HUD (S2-T3): el prompt de `nearbyTargetId` debe ocultarse si `isAtDesk` o si hay ficha abierta (`selectedArtifactId`). El avatar se queda quieto mientras haya una ficha abierta.
+- Para el HUD (S2-T3): el prompt de `nearbyTargetId` debe ocultarse si `isAtDesk` o si hay ficha abierta (`selectedArtifactId`). El jugador se queda quieto mientras haya una ficha abierta (y el cursor se libera).
 
 ### Movimiento y colisiones (`playerNavigation.ts`)
-- `WASD` y flechas, **relativos a la cámara** (W avanza hacia donde mira la cámara proyectada al suelo). El yaw gira suavemente hacia el avance. Velocidad 1.6 m/s, arranque suavizado.
-- AABB: reutiliza `FLOOR_OBSTACLES` de `catNavigation.ts` (escritorio, silla, cama, morral+ukelele) inflados por el radio del avatar (0.22 m), más límites de ±2.2 m. Si el movimiento diagonal choca, **desliza** por cada eje por separado.
+- `WASD` y flechas, **relativos a la cámara** (W avanza hacia donde mira la cámara proyectada al suelo; A/D van de lado). Velocidad 1.6 m/s, arranque suavizado. El cuerpo no gira: la dirección de la mirada la manda el ratón.
+- AABB: reutiliza `FLOOR_OBSTACLES` de `catNavigation.ts` (escritorio, silla, cama, morral+ukelele) inflados por el radio del jugador (0.22 m), más límites de ±2.2 m. Si el movimiento diagonal choca, **desliza** por cada eje por separado.
 - Si se mueve algún mueble, cambiar `FLOOR_OBSTACLES`: el gato y el jugador lo comparten.
 - Se ignoran las teclas con el foco en `input`/`textarea`/`select` (el panel Leva) y con `Ctrl`/`Alt`/`Meta`.
-- Los modos no libres (sentándose, sentado, levantándose) ignoran el teclado.
+- Sentado, o con una ficha abierta, el jugador ignora el teclado de movimiento.
 
 ### Proximidad
 - Objetivos: la zona del escritorio `DESK_ZONE = [0, -1.35]` (id `'desk-pc'`), los artefactos de `ROOM_LORE` y Milo. Las posiciones se leen **de la escena** (`artifact-<id>` y `milo-cat`), no del lore estático: respetan la calibración de Leva y el paseo del gato.
 - Radio 0.95 m, con **histéresis de 0.15 m** (el objetivo activo se mantiene hasta 1.10 m) para que el prompt no parpadee. Gana el más cercano.
 - **Alcance extra** (`EXTRA_REACH`) para objetos que el mobiliario impide acercar: `books-stephen-king` +0.4, `lightbox-lumos` +0.4, `flag-aguilas` +0.25. Sin esto su prompt nunca aparecería (a 1.11 m, 1.21 m y 0.95 m del punto caminable más cercano). Se calculó con las posiciones del lore actuales; recalcular si se recalibran.
-- Mientras el avatar se sienta, está sentado o se levanta, `nearbyTargetId` es `null`.
+- Sentado, `nearbyTargetId` es `null`.
 
 ### Sentarse y levantarse
-- El avatar rodea la silla por el lado (`SEAT_SIDE_STEP` `[0.62, -1.0]`), se sienta en `SEAT.position` `[0, -1.2]` mirando a −z, y al levantarse termina en `STAND_SPOT` `[0.7, -0.8]` (caminable, a 0.82 m del escritorio: desde ahí `nearbyTargetId='desk-pc'`).
-- Duración sentarse ≈ 0.9–1.5 s, levantarse 0.9 s. **Cancelar a mitad de camino no es instantáneo**: el avatar completa el paso y se levanta; así nunca queda dentro de un obstáculo.
-- Pose sentada: cadera a 0.58 m, muslos casi horizontales, pantorrillas verticales, antebrazos sobre el teclado.
+- Sin avatar, el cambio es instantáneo en el estado y animado solo en la cámara. Al sentarse, el jugador pasa a `SEAT.position` `[0, -1.2]` y la cámara vuela hasta los ojos del asiento (ver *Cámara*). Al levantarse, reaparece en `STAND_SPOT` `[0.7, -0.8]` (caminable, a 0.82 m del escritorio: desde ahí `nearbyTargetId='desk-pc'`) y la cámara vuelve a la vista libre mirando hacia el escritorio.
+- Cancelar a mitad de la transición es seguro: se interrumpe el tween y se vuela desde donde esté la cámara. No hay recorrido a pie que pueda dejar al jugador dentro de un obstáculo.
+- `deskCameraReady` pasa a `true` cuando la cámara llega al monitor y vuelve a `false` en cuanto se pide levantarse. Es la señal para montar el Mini-OS.
 
-### Cámara (`CameraController`)
-- **Seguimiento (modo `orbit`):** `OrbitControls` se conserva (arrastrar y zoom). Cámara y punto de mira se desplazan juntos hacia el torso del jugador (`y=1.05`) con suavizado exponencial (rapidez 7/s), así que el ángulo y el zoom elegidos por el usuario se mantienen. Desplazamiento inicial `(3.2, 2.4, 3.7)`.
-- **Escritorio (`isAtDesk`):** tween GSAP de 1.5 s (`power3.inOut`) de posición, objetivo y FOV hacia una pose calculada desde la malla `monitor-screen` (desplazamiento `(0, 0.84, 1.48)`, FOV 28°). `OrbitControls` se desactiva mientras dura el modo escritorio. Si `monitor-screen` no existe, usa `DESK_CAMERA_FALLBACK`.
-- **La pose NO es arbitraria:** con la cámara a `y=1.75` la cabeza del avatar sentado tapaba la fila inferior de la pantalla (8 de 81 puntos de la línea de visión). A `y≈2.0, z≈-0.5` quedan 0/81 tapados. Importa para S2-T4: un `<Html transform occlude>` se ocultaría detrás de la cabeza.
-- Al levantarse, vuelve a la pose de seguimiento que tenía antes de sentarse (1.2 s) y reactiva `OrbitControls`.
-- La cámara por defecto ya no mira al centro de la habitación (`CAMERA_CONSTRAINTS.target` quedó solo como referencia).
+### Cámara en primera persona (`CameraController`) — CAMBIO DE CONTRATO
+Se eliminó la tercera persona y `OrbitControls`. **El jugador es la cámara**; no hay avatar visible.
+- **Vista libre (`cameraMode='orbit'`):** ojos a `EYE_HEIGHT = 1.7 m` sobre `playerPosition`, FOV 70°, plano cercano 0.05 m, leve vaivén al caminar. Mirar arriba y abajo se limita a ±72°. `PlayerCharacter` corre con prioridad −2, antes que la cámara, para que ésta lea la posición del mismo fotograma.
+- **Ratón:** clic en un espacio vacío captura el cursor (Pointer Lock) y el movimiento del ratón gira la vista (`LOOK_SENSITIVITY = 0.0022` rad/px). Si el navegador no permite el bloqueo, mantener el botón izquierdo y arrastrar también gira. `Esc` suelta el cursor. Un clic sobre un objeto con el cursor libre abre su ficha en vez de capturar.
+- **Mira (cursor capturado):** el navegador congela las coordenadas del cursor, así que los eventos de puntero de R3F no sirven. En su lugar, cada 100 ms un rayo desde el centro de la pantalla (alcance 3.2 m) escribe `hoveredArtifactId`; el clic selecciona lo apuntado. Una pared o un mueble opaco tapa lo que hay detrás; el haz de luz, el paisaje del ventanal y las partículas no. Con el cursor capturado, `ArtifactMesh` y `MiloCat` **ignoran** los eventos de R3F (`isPointerLocked()` en `src/lib/pointerLock.ts`). `FirstPersonHUD` dibuja la mira, que crece al apuntar a algo.
+- **Sentado (`isAtDesk`):** tween GSAP de 1.4 s (`power3.inOut`) de posición, orientación (`slerp`) y FOV hasta los ojos del asiento `SEATED_EYE = [0, 1.30, -1.20]`, mirando el centro de `monitor-screen`. FOV mínimo 44°, mayor si la ventana es más cuadrada para que quepan los 0.9 m de pantalla. Se suelta el cursor para poder usar el Mini-OS. La cabeza del avatar ya no tapa la pantalla, así que la cámara baja de `y=2.0` (antigua pose de tercera persona) a la altura real de los ojos.
+- **Al levantarse:** tween de 1.1 s a los ojos sobre `STAND_SPOT`, mirando hacia el escritorio (yaw π, cabeceo −0.12). La vista libre retoma ahí; el cursor queda libre hasta el siguiente clic.
+- **Espacio cerrado:** cuatro paredes más un **techo nuevo** (`Ceiling` en `RoomEnvironment`, cara hacia abajo). Los límites del jugador (±2.2 m) lo mantienen a 0.3 m de las paredes, por encima del plano cercano. Desde dentro no se ve el exterior de la página; lo único exterior visible es el paisaje del ventanal (`WindowView`).
+- `CAMERA_CONSTRAINTS` (límites de órbita de S1-T1) queda exportado pero sin uso, para no romper importaciones.
 
-### Avatar (`PlayerCharacter`)
-- 1.70 m, procedural, buzo azul con capucha y cordones, vaqueros, zapatillas blancas. Contorno de tinta con el mismo `Ink` del resto de la escena (`<Outlines thickness={0.015} color="#1c1613" screenspace />`).
-- Caminata: piernas en diagonal, brazos opuestos, balanceo del torso y rebote; respiración en reposo. Sin estado de React por fotograma (todo en refs).
-- El avatar no intercepta el raycast, así que no tapa los clics de los artefactos que tiene detrás.
-- `ArtifactMesh` expone cada artefacto como un nodo llamado `artifact-<id>` (lo usa la proximidad).
+### Jugador (`PlayerCharacter`)
+- No renderiza geometría (`return null`). Sólo teclado, colisiones, proximidad y asiento. El modelado del avatar de 1.70 m (buzo azul, `Outlines`) se retiró por decisión de producto.
+- `ArtifactMesh` expone cada artefacto como un nodo llamado `artifact-<id>` (lo usan la proximidad y la mira).
+
+### Mini-OS en el monitor (`MonitorOS`)
+- Solo existe **como interfaz interna de la pantalla 3D** y **solo sentado**: `RoomEnvironment > Monitor` lo monta dentro de `<Html transform>` únicamente con `deskCameraReady = true`, y `MonitorOS` devuelve `null` si `isAtDesk` es falso. De pie no hay ninguna capa DOM del Mini-OS, así que no puede flotar sobre el cuarto.
+- Tamaño corregido: en modo `transform`, 1 m = `400 / distanceFactor` px. Con `distanceFactor=0.52` el DOM de 1024×592 medía ~1.33×0.77 m y desbordaba la pantalla (0.9×0.52 m). Ahora `distanceFactor = 400·0.9/1024 ≈ 0.352`, que lo ajusta exacto (misma proporción 1.73).
+- Se quitó `occlude`: sentado no hay nada delante de la pantalla, y la prueba de oclusión por fotograma podía ocultar el Mini-OS por una partícula o un plano translúcido.
+- Las ventanas de las apps (`absolute inset-4` dentro de un `main` con `overflow-hidden`) ya quedaban contenidas dentro de los 1024×592 px del OS.
 
 ## Notas de diseño
 - `RoomArtifact.transform` usa la calibración exportada (S1-T4) o, en su defecto, los campos `default*` de `RoomArtifactSeed`.
 - Rotaciones siempre en radianes.
 - El store no guarda transforms ni atmósfera: son datos derivados/estáticos, no estado de UI.
-- **Ubicación de banderas y pósters:** la cámara por defecto (`[3.8, 3.2, 4.2]`) queda fuera de la pared derecha, que es invisible desde ahí. Por eso las banderas pasaron a la pared izquierda (`z=1.03` y `z=2.0`, junto al ventanal) y `poster-cr7` al fondo (`x=2.15`). Colgar algo en la pared derecha se vería por detrás.
+- **Ubicación de banderas y pósters:** las banderas están en la pared izquierda (`z=1.03` y `z=2.0`, junto al ventanal) y `poster-cr7` al fondo (`x=2.15`). Con la cámara en primera persona las cuatro paredes se ven por dentro, así que ya podría colgarse algo en la pared derecha sin verse por detrás.
+- **Póster de Harry Potter eliminado** (`poster-hp`, de `roomLore.ts` y de `CustomArtifacts`). El póster SAMI (`poster-muestra-proyectos`) ocupa su hueco: centrado en el tramo libre de la pared del fondo entre la esquina izquierda (`x=-2.5`) y la repisa (`x=-1.0`), en `[-1.75, 1.85, -2.5]`, hasta 1.0×1.4 m (antes 0.58×0.8). `public/textures/poster-hp.webp` quedó sin uso en disco.
+- **Calibración con Leva desactivada por defecto.** `ArtifactsManager` usa los transforms fijos de `roomLore.ts` y no crea ningún control, así que no aparece panel. Para recalibrar: `NEXT_PUBLIC_CALIBRATION=1` en `.env.local` y reiniciar el servidor. Esto también corrige el `Date.now()` en render que `eslint` marcaba.
+- **`WindowView` recalibrado.** Sus capas se alinean desde un punto de vista fijo (`WINDOW_VIEW.camera`); ahora son los ojos del punto de aparición `[0.9, 1.7, 0.9]` en vez de la antigua cámara orbital. Si cambia `PLAYER_CONFIG.spawn` o `EYE_HEIGHT`, actualizar ese valor.
 
 ## Pendiente para Antigravity (conectar y QA)
 1. **Rendimiento real.** No se pudo validar los 60 FPS: el entorno de verificación (Edge headless con SwiftShader por software) rinde ~1.6 FPS. Medir con GPU real. La escena tiene cientos de mallas con contorno; si baja de 60 FPS, reducir `Outlines` en objetos lejanos o fusionar geometrías.
 2. **Iluminación.** `Atmosphere.tsx` no se tocó. Revisar que las paredes crema no se quemen con `hemisphereLight` + `ambientLight` + ACES. Además, three 0.187 avisa `PCFSoftShadowMap has been removed`; el log lo emite Next, conviene cambiar el tipo de sombra a `PCFShadowMap`.
-3. **Leva.** Los defaults cambiaron de significado (escala = multiplicador). Reexportar la calibración y comprobar que los rangos de escala (0.01–3) y posición siguen siendo útiles.
+3. **Leva.** Desactivada por defecto (ver *Notas de diseño*). Al recalibrar con `NEXT_PUBLIC_CALIBRATION=1`, los defaults tienen otro significado (escala = multiplicador): reexportar la calibración y copiar los valores a `roomLore.ts`.
 4. **Milo.** Comprobar a 60 FPS que no atraviesa muebles, que el clic funciona en movimiento y que la pose sentada no se corta con el suelo. Ajustar `CAT_WAYPOINTS` si se calibran muebles.
 5. **Verificación visual de objetos.** Hay dudas de legibilidad en tamaño real: el título "LA CUPULA" del lomo, los pines del morral y el cordón de la credencial. Revisar con zoom de cámara.
-6. **Deuda previa (no de este cambio).** `ArtifactsManager.tsx:96` llama `Date.now()` durante el render y `eslint` lo marca (`react-hooks/purity`). No se tocó. El resto de `src/` pasa `eslint` sin errores, y `npm run build` y `tsc --noEmit` pasan limpios.
+6. **SIN VERIFICAR: la corrección a primera persona se escribió sin compilar ni ejecutar nada** (por indicación expresa de no usar la terminal). Antes de dar nada por bueno, correr `npx tsc --noEmit`, `npx eslint src` y `npm run build`, y probar a mano: (a) clic para capturar el cursor y mirar con el ratón; (b) caminar con WASD sin atravesar muebles ni paredes; (c) mirar hacia arriba y a las esquinas: no debe verse el exterior; (d) apuntar a un objeto con la mira (se ilumina) y hacer clic: abre la ficha y suelta el cursor; (e) `E` junto al escritorio: la cámara vuela al monitor y aparece el Mini-OS cubriendo exactamente la pantalla; (f) `Esc` sentado: vuelve y el Mini-OS desaparece; (g) caminando, no debe verse ninguna capa del Mini-OS flotando.
 7. **Limpieza opcional.** `public/models/room.glb` (4.4 MB), `RoomModel.tsx` y `RoomFurniture.tsx` ya no se usan.
 
-### Sprint 2: pendiente para Antigravity (S2-T3, S2-T4 y QA)
-1. **S2-T3 (HUD).** Leer `nearbyTargetId`: `'desk-pc'` → `[E] Sentarse en el PC`; otro id → `[E] Inspeccionar <title>`. `E` ejecuta `selectArtifact(id)` o `setIsAtDesk(true)`; `Escape` ejecuta `setIsAtDesk(false)` (y `closeArtifact()` si hay ficha). Ocultar el prompt con `isAtDesk` o ficha abierta. **No hay tecla `E` ni `Escape` en este sprint: nada conecta todavía el teclado con `setIsAtDesk`.**
-2. **S2-T4 (Mini-OS).** La cámara de escritorio ya deja el monitor completo a la vista. Anclar `<Html transform occlude>` a `monitor-screen` (`0.9 × 0.52 m`). `openApp(id)` solo funciona sentado.
-3. **Rendimiento.** No se pudo medir en GPU real: el entorno de verificación (SwiftShader) rinde < 2 FPS. Con `dt` limitado a 0.05 s, el avatar avanza ~0.04 m por fotograma a velocidad máxima. Validar a 60 FPS la fluidez del seguimiento de cámara y de la caminata.
-4. **Verificado aquí:** colisiones, deslizamiento, límites, conectividad (no hay celdas caminables inalcanzables salvo el rincón cerrado tras el morral), proximidad con histéresis (Node); y con el navegador: movimiento por teclado, sentarse, cámara de escritorio, levantarse, `openApp` solo sentado, cancelar a mitad de camino y teclado ignorado en campos de texto.
-5. **No verificado visualmente:** la animación de caminata en movimiento continuo (solo poses estáticas por la tasa de fotogramas), y la comodidad de la cámara de seguimiento en el rango completo de zoom/órbita.
+### Sprint 2: estado de verificación
+1. **S2-T3 (HUD) y S2-T4 (Mini-OS)** los implementó Antigravity (`RoomOverlay`: `E` y `Escape`; `MonitorOS`). Este cambio de primera persona los toca solo en: el montaje del Mini-OS (ver *Mini-OS en el monitor*), una guarda en `MonitorOS`, y el texto de ayuda de `RoomOverlay`. `Esc` con el cursor capturado lo consume el navegador (suelta el cursor) y **no llega a la página**: hace falta pulsarlo una segunda vez para levantarse o cerrar. Sentado y con una ficha abierta el cursor ya está libre, así que ahí `Esc` funciona a la primera.
+2. **Verificado antes del cambio a primera persona** (en la versión de tercera persona): colisiones, deslizamiento, límites, conectividad, proximidad con histéresis (Node) y, en navegador, movimiento por teclado, sentarse, levantarse, `openApp` solo sentado y teclado ignorado en campos de texto. **La lógica pura (`playerNavigation.ts`) no cambió y sigue vigente. Todo lo de cámara, ratón, mira y Mini-OS es nuevo y NO está verificado** (ver punto 6 de la lista anterior).
+3. **Riesgos conocidos a revisar primero:** (a) el tamaño del Mini-OS se calculó con la fórmula de `Html transform` de drei (1 m = 400/`distanceFactor` px), no se vio en pantalla; (b) `WindowView` se recalibró a los ojos del punto de aparición, el horizonte del ventanal puede necesitar ajuste fino; (c) la mira hace un rayo contra toda la escena cada 100 ms: si cuesta FPS, restringirlo a `artifacts-group` y `milo-cat`.

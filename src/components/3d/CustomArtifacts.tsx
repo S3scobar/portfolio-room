@@ -613,14 +613,14 @@ export function CustomArtifactModel({ id, glow, accent }: CustomArtifactModelPro
       return <HangingFlag kind="unal" w={0.82} h={0.51} {...v} />;
     case 'flag-aguilas':
       return <HangingFlag kind="aguilas" w={0.82} h={0.51} {...v} />;
-    case 'poster-hp':
-      return <FramedPoster texturePath="/textures/poster-hp.webp" maxW={0.8} maxH={0.7} frame="#2a2421" {...v} />;
     case 'poster-interstellar':
       return <CanvasPoster factory={interstellarPosterTexture} maxW={0.62} maxH={0.72} frame="#16181c" {...v} />;
     case 'poster-dune-sw-marvel':
       return <CanvasPoster factory={dunePosterTexture} maxW={0.6} maxH={0.8} frame="#3a2a18" {...v} />;
     case 'poster-muestra-proyectos':
-      return <CanvasPoster factory={muestraPosterTexture} maxW={0.58} maxH={0.8} frame="#2c2f36" {...v} />;
+      // Ocupa el hueco del antiguo poster de HP: tramo libre de x = -2.5 a -1.0 (1.5 m), poster centrado en x = -1.75.
+      // Con marco mide ~1.05 m de ancho (0.225 m de margen por lado) y ~1.45 m de alto.
+      return <CanvasPoster factory={muestraPosterTexture} maxW={1.0} maxH={1.4} frame="#2c2f36" {...v} />;
     case 'poster-cr7':
       return <FramedPoster texturePath="/textures/poster-cr7.webp" maxW={0.6} maxH={0.6} frame="#1b2a4a" {...v} />;
     case 'xbox-series-s':

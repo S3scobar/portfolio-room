@@ -10,9 +10,13 @@ import { finish, makeCanvas, rng } from './canvasTextures';
 
 type Ctx = CanvasRenderingContext2D;
 
-/** Camara inicial de RoomCanvas y centro del ventanal: definen el rayo central de la vista. */
+/**
+ * Ojos del jugador en el punto de aparicion (primera persona, y = 1.7 m) y centro del ventanal: definen el rayo
+ * central de la vista. Antes era la camara orbital [3.8, 3.2, 4.2]; si se cambia el punto de aparicion
+ * (`PLAYER_CONFIG.spawn`) o `EYE_HEIGHT`, actualizar este valor.
+ */
 export const WINDOW_VIEW = {
-  camera: [3.8, 3.2, 4.2] as [number, number, number],
+  camera: [0.9, 1.7, 0.9] as [number, number, number],
   windowCenter: [-2.5, 1.7, -0.4] as [number, number, number],
   /** Tangente del angulo por pixel de textura (comun a todas las capas). */
   tanPerPx: 0.7 / 1024,

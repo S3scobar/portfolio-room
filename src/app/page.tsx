@@ -3,6 +3,7 @@
 import dynamic from 'next/dynamic';
 import { ArtifactModal } from '@/components/ui/ArtifactModal';
 import { RoomOverlay } from '@/components/ui/RoomOverlay';
+import { FirstPersonHUD } from '@/components/ui/FirstPersonHUD';
 
 // Cargar el canvas 3D dinámicamente deshabilitando SSR para evitar problemas de WebGL en Node
 const RoomCanvas = dynamic(
@@ -28,6 +29,7 @@ export default function Home() {
 
       {/* Capas UI y tarjetas de lore */}
       <RoomOverlay />
+      <FirstPersonHUD />
       <ArtifactModal />
     </main>
   );

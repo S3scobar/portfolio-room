@@ -34,7 +34,17 @@
 
 ### 3. Implementación S2-T4 (Mini-OS en el Monitor)
 - Archivo: `src/components/os/MonitorOS.tsx`
+- Datos: `src/data/appsRegistry.ts` filtrado exclusivamente a los 8 proyectos con enlaces reales provistos por Santiago:
+  1. **LUKA:** `https://luka-phi-tan.vercel.app/`
+  2. **Sustómetro (Semana de Sistemas):** `https://semanasistemas.vercel.app/sustometro.html`
+  3. **Sistemas UNAL:** `https://sistemasunal.vercel.app/`
+  4. **Facultad de Minas:** `https://minas-self.vercel.app/`
+  5. **Ingeniería Mecánica UNMED:** `https://mecanicaunmed.vercel.app/`
+  6. **Ingeniería Eléctrica:** `https://electrica-chi.vercel.app/`
+  7. **Ingeniería de Petróleos:** `https://petroleos.vercel.app/`
+  8. **Ingeniería Ambiental:** `https://ambiental-beta.vercel.app/`
 - Montado en: `src/components/3d/RoomEnvironment.tsx` sobre la malla `monitor-screen` usando `<Html transform occlude distanceFactor={0.52} className="pointer-events-auto">`.
+- Grid ajustado estéticamente a 4 columnas centradas para una disposición limpia y proporcionada.
 - **Características:**
   * Barra superior de estado con título `LUKA OS · v2.6`, luces indicadoras y botón `Levantarse` (que ejecuta `setIsAtDesk(false)`).
   * Escritorio con cuadrícula de accesos directos para **LUKA** y las 12 webs de `src/data/appsRegistry.ts` con sus iconos de Lucide y colores temáticos.

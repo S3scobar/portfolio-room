@@ -62,20 +62,6 @@ export const ROOM_LORE: RoomArtifactSeed[] = [
     defaultScale: [1, 1, 1],
     geometryType: 'photo_frame',
   },
-  // 4. Póster Undesirable No. 1 (Harry Potter) - Pared del fondo a la izquierda sobre el escritorio
-  {
-    id: 'poster-hp',
-    title: 'Undesirable No. 1 · Harry Potter',
-    subtitle: 'Casa Ravenclaw',
-    category: 'cine_libros',
-    description: 'Ingenio, curiosidad y aprendizaje sin límites. Un clásico colgado directo en la pared de mi cuarto.',
-    texturePath: '/textures/poster-hp.webp',
-    accentColor: '#1D4ED8',
-    defaultPosition: [-1.65, 2.1, -2.5],
-    defaultRotation: [0, 0, 0],
-    defaultScale: [1, 1, 1],
-    geometryType: 'poster',
-  },
   // 5. Póster Interstellar & La Odisea - Pared del fondo a la derecha de las repisas
   {
     id: 'poster-interstellar',
@@ -244,7 +230,9 @@ export const ROOM_LORE: RoomArtifactSeed[] = [
     defaultScale: [1, 1, 1],
     geometryType: 'prop_box',
   },
-  // 17. Póster Muestra de Proyectos (SAMI) - Pared del fondo, a la izquierda bajo el póster de Harry Potter
+  // 17. Póster Muestra de Proyectos (SAMI) - Pared del fondo, centrado en el tramo libre entre la esquina
+  // izquierda (x = -2.5) y la repisa (x = -1.0): centro x = -1.75, margen igual a ambos lados. Ocupa el hueco
+  // del antiguo póster de Harry Potter (ya eliminado). Su tamaño (hasta 1.0 x 1.45 m) se fija en CustomArtifacts.tsx.
   {
     id: 'poster-muestra-proyectos',
     title: 'Muestra de Proyectos en Ingeniería · SAMI',
@@ -252,7 +240,7 @@ export const ROOM_LORE: RoomArtifactSeed[] = [
     category: 'academico',
     description: 'El póster de SAMI, un wearable de monitoreo para adultos mayores que sufren soledad, que presenté en la Muestra de Proyectos junto a mi equipo.',
     accentColor: '#1E6B8C',
-    defaultPosition: [-1.9, 1.22, -2.5],
+    defaultPosition: [-1.75, 1.85, -2.5],
     defaultRotation: [0, 0, 0],
     defaultScale: [1, 1, 1],
     geometryType: 'poster',
