@@ -1,6 +1,6 @@
 'use client';
 
-// Modelos 3D procedurales de los 16 artefactos de `roomLore.ts`.
+// Modelos 3D procedurales de los 17 artefactos de `roomLore.ts`.
 // Convencion: unidades en metros, origen = punto de apoyo (base centrada) o punto de montaje
 // en pared (centro del objeto, cara trasera sobre la pared, el objeto crece hacia +z local).
 // `defaultScale` del lore es un multiplicador (1 = tamano real).
@@ -18,6 +18,7 @@ import {
   rng,
   unalFlagTexture,
 } from '@/lib/canvasTextures';
+import { dunePosterTexture, muestraPosterTexture } from '@/lib/posterTextures';
 import type { CustomArtifactModelProps } from '@/types/room';
 
 type V = { glow: number; accent: string };
@@ -86,10 +87,10 @@ function FramedPoster({ texturePath, ...rest }: V & { texturePath: string; maxW:
   return <PosterFrame tex={tex} {...rest} />;
 }
 
-/** Poster dibujado por codigo (canvas), sin imagen externa. */
-function InterstellarPoster(props: V & { maxW: number; maxH: number; frame: string }) {
-  const tex = useMemo(() => interstellarPosterTexture(), []);
-  return <PosterFrame tex={tex} {...props} />;
+/** Poster dibujado por codigo (canvas), sin imagen externa. `factory` debe ser una funcion estable (de modulo). */
+function CanvasPoster({ factory, ...rest }: V & { factory: () => THREE.Texture; maxW: number; maxH: number; frame: string }) {
+  const tex = useMemo(() => factory(), [factory]);
+  return <PosterFrame tex={tex} {...rest} />;
 }
 
 function HangingFlag({
@@ -615,9 +616,11 @@ export function CustomArtifactModel({ id, glow, accent }: CustomArtifactModelPro
     case 'poster-hp':
       return <FramedPoster texturePath="/textures/poster-hp.webp" maxW={0.8} maxH={0.7} frame="#2a2421" {...v} />;
     case 'poster-interstellar':
-      return <InterstellarPoster maxW={0.62} maxH={0.72} frame="#16181c" {...v} />;
+      return <CanvasPoster factory={interstellarPosterTexture} maxW={0.62} maxH={0.72} frame="#16181c" {...v} />;
     case 'poster-dune-sw-marvel':
-      return <FramedPoster texturePath="/textures/poster-dune.webp" maxW={0.7} maxH={0.7} frame="#3a2a18" {...v} />;
+      return <CanvasPoster factory={dunePosterTexture} maxW={0.6} maxH={0.8} frame="#3a2a18" {...v} />;
+    case 'poster-muestra-proyectos':
+      return <CanvasPoster factory={muestraPosterTexture} maxW={0.58} maxH={0.8} frame="#2c2f36" {...v} />;
     case 'poster-cr7':
       return <FramedPoster texturePath="/textures/poster-cr7.webp" maxW={0.6} maxH={0.6} frame="#1b2a4a" {...v} />;
     case 'xbox-series-s':

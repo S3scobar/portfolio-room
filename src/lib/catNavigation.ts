@@ -13,7 +13,7 @@ export const FLOOR_OBSTACLES: FloorObstacle[] = [
   { id: 'escritorio', min: [-1.3, -2.3], max: [1.3, -1.3] },
   { id: 'silla', min: [-0.35, -1.45], max: [0.35, -0.85] },
   { id: 'cama', min: [0.95, -0.75], max: [2.15, 1.5] },
-  { id: 'morral-y-ukelele', min: [-1.8, -1.8], max: [-1.15, -1.3] },
+  { id: 'morral-y-ukelele', min: [-2.4, -1.8], max: [-1.4, -1.3] },
 ];
 
 /** Puntos libres del suelo y alfombra azul. `sitSpot` = lugares donde le gusta sentarse. */

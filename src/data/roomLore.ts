@@ -90,14 +90,13 @@ export const ROOM_LORE: RoomArtifactSeed[] = [
     defaultScale: [1, 1, 1],
     geometryType: 'poster',
   },
-  // 6. Póster Dune, Star Wars & Marvel - Pared izquierda en sección libre (sin tapar la ventana: z = -1.8)
+  // 6. Póster Dune - Pared izquierda en sección libre, entre la ventana y la esquina del fondo (z = -1.85)
   {
     id: 'poster-dune-sw-marvel',
-    title: 'Dune · Star Wars · Marvel',
-    subtitle: 'Universos Sci-Fi & Fantasía',
+    title: 'Dune',
+    subtitle: 'Arrakis al atardecer',
     category: 'cine_libros',
     description: 'Desde Arrakis hasta una galaxia muy lejana: las sagas que inspiran mi lado creativo.',
-    texturePath: '/textures/poster-dune.webp',
     accentColor: '#D97706',
     defaultPosition: [-2.5, 2.1, -1.85],
     defaultRotation: [0, Math.PI / 2, 0],
@@ -244,5 +243,18 @@ export const ROOM_LORE: RoomArtifactSeed[] = [
     defaultRotation: [0, 0.2, 0],
     defaultScale: [1, 1, 1],
     geometryType: 'prop_box',
+  },
+  // 17. Póster Muestra de Proyectos (SAMI) - Pared del fondo, a la izquierda bajo el póster de Harry Potter
+  {
+    id: 'poster-muestra-proyectos',
+    title: 'Muestra de Proyectos en Ingeniería · SAMI',
+    subtitle: 'Facultad de Minas · UNAL Sede Medellín',
+    category: 'academico',
+    description: 'El póster de SAMI, un wearable de monitoreo para adultos mayores que sufren soledad, que presenté en la Muestra de Proyectos junto a mi equipo.',
+    accentColor: '#1E6B8C',
+    defaultPosition: [-1.9, 1.22, -2.5],
+    defaultRotation: [0, 0, 0],
+    defaultScale: [1, 1, 1],
+    geometryType: 'poster',
   },
 ];

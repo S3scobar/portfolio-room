@@ -3,7 +3,7 @@
 // Entorno procedural de la habitacion (+-2.5 m, alto 3 m). Reemplaza a RoomModel (GLB gris)
 // y a RoomFurniture. Paredes de una sola cara con la normal hacia adentro: desde fuera
 // quedan invisibles (corte tipo diorama). Eje +x = pared derecha, -x = ventana, -z = fondo.
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import * as THREE from 'three';
 import { Sparkles } from '@react-three/drei';
 import { Ink, RBox } from './parts';
@@ -11,9 +11,9 @@ import {
   lightBeamTexture,
   paintedWallTexture,
   rugTexture,
-  sunsetSkyTexture,
   woodFloorTexture,
 } from '@/lib/canvasTextures';
+import { WINDOW_LAYER_DISTANCE, WINDOW_VIEW, windowViewTextures, type WindowLayerKey } from '@/lib/windowView';
 
 export const ROOM = { half: 2.5, height: 3 } as const;
 
@@ -129,14 +129,51 @@ function Ventanal() {
   );
 }
 
-/** Plano de cielo de atardecer con montanas, detras de la ventana. */
-function SunsetSky() {
-  const map = useMemo(() => sunsetSkyTexture(), []);
+/**
+ * Paisaje exterior en capas (cielo, nubes, montanas, torres, arboles, casas y calle) detras del ventanal.
+ * Cada capa es un plano a distinta distancia, orientado hacia la camara inicial y escalado con la
+ * distancia: desde esa camara se componen en una sola imagen, y al orbitar se separan (parallax).
+ * Si cambias la camara inicial de RoomCanvas, actualiza `WINDOW_VIEW.camera`.
+ */
+function WindowView() {
+  const textures = useMemo(() => windowViewTextures(), []);
+  useEffect(() => () => Object.values(textures).forEach((t) => t.dispose()), [textures]);
+  const { quaternion, forward, camera } = useMemo(() => {
+    const cam = new THREE.Vector3(...WINDOW_VIEW.camera);
+    const f = new THREE.Vector3(...WINDOW_VIEW.windowCenter).sub(cam).normalize();
+    const right = new THREE.Vector3().crossVectors(f, new THREE.Vector3(0, 1, 0)).normalize();
+    const up = new THREE.Vector3().crossVectors(right, f);
+    const q = new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().makeBasis(right, up, f.clone().negate()));
+    return { quaternion: q, forward: f, camera: cam };
+  }, []);
+  const keys = Object.keys(WINDOW_LAYER_DISTANCE) as WindowLayerKey[];
   return (
-    <mesh position={[-7.5, 1.5, 0]} rotation={[0, Math.PI / 2, 0]}>
-      <planeGeometry args={[18, 9]} />
-      <meshBasicMaterial map={map} toneMapped={false} fog={false} />
-    </mesh>
+    <group name="window-view">
+      {keys.map((key, i) => {
+        const d = WINDOW_LAYER_DISTANCE[key];
+        const isSky = key === 'sky';
+        const w = isSky ? WINDOW_VIEW.skyTanHalf * 2 * d : WINDOW_VIEW.layerSize[0] * WINDOW_VIEW.tanPerPx * d;
+        const h = isSky ? w : WINDOW_VIEW.layerSize[1] * WINDOW_VIEW.tanPerPx * d;
+        return (
+          <mesh
+            key={key}
+            position={camera.clone().addScaledVector(forward, d)}
+            quaternion={quaternion}
+            renderOrder={i - keys.length}
+          >
+            <planeGeometry args={[w, h]} />
+            <meshBasicMaterial
+              map={textures[key]}
+              transparent={!isSky}
+              depthWrite={isSky}
+              side={THREE.DoubleSide}
+              toneMapped={false}
+              fog={false}
+            />
+          </mesh>
+        );
+      })}
+    </group>
   );
 }
 
@@ -304,7 +341,7 @@ export function RoomEnvironment() {
       <Walls />
       <Baseboards />
       <Ventanal />
-      <SunsetSky />
+      <WindowView />
       <LightShaft />
       <Rug />
       <Desk />

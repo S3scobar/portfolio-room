@@ -16,7 +16,7 @@ export function rng(seed: number) {
   };
 }
 
-function makeCanvas(w: number, h: number) {
+export function makeCanvas(w: number, h: number) {
   const canvas = document.createElement('canvas');
   canvas.width = w;
   canvas.height = h;
@@ -25,7 +25,7 @@ function makeCanvas(w: number, h: number) {
   return { canvas, ctx };
 }
 
-function finish(canvas: HTMLCanvasElement, wrap = false) {
+export function finish(canvas: HTMLCanvasElement, wrap = false) {
   const tex = new THREE.CanvasTexture(canvas);
   tex.colorSpace = THREE.SRGBColorSpace;
   tex.anisotropy = 8;
@@ -151,71 +151,6 @@ export function rugTexture() {
   ctx.lineTo(W / 2 - 120, H / 2);
   ctx.closePath();
   ctx.fill();
-  return finish(canvas);
-}
-
-/** Cielo de atardecer visto desde la ventana: dorado en el horizonte, naranja, rosa y violeta arriba, con montanas. */
-export function sunsetSkyTexture() {
-  const W = 2048;
-  const H = 1024;
-  const horizon = 590;
-  const { canvas, ctx } = makeCanvas(W, H);
-  const rand = rng(2024);
-
-  const sky = ctx.createLinearGradient(0, 0, 0, horizon);
-  sky.addColorStop(0, '#3a2866');
-  sky.addColorStop(0.22, '#7b3f8f');
-  sky.addColorStop(0.45, '#d95f8a');
-  sky.addColorStop(0.7, '#ff8d5c');
-  sky.addColorStop(0.9, '#ffbe66');
-  sky.addColorStop(1, '#ffe08a');
-  ctx.fillStyle = sky;
-  ctx.fillRect(0, 0, W, horizon + 4);
-
-  const glow = ctx.createRadialGradient(1450, horizon - 10, 0, 1450, horizon - 10, 560);
-  glow.addColorStop(0, 'rgba(255,236,170,0.95)');
-  glow.addColorStop(0.35, 'rgba(255,190,110,0.45)');
-  glow.addColorStop(1, 'rgba(255,170,100,0)');
-  ctx.fillStyle = glow;
-  ctx.fillRect(0, 0, W, horizon + 4);
-
-  ctx.fillStyle = '#fff3c4';
-  ctx.beginPath();
-  ctx.arc(1450, horizon - 28, 46, 0, Math.PI * 2);
-  ctx.fill();
-
-  for (let i = 0; i < 9; i++) {
-    const cx = rand() * W;
-    const cy = 90 + rand() * (horizon - 230);
-    const w = 220 + rand() * 360;
-    const h = 14 + rand() * 24;
-    ctx.fillStyle = `rgba(255,${150 + Math.floor(rand() * 60)},${140 + Math.floor(rand() * 40)},0.3)`;
-    ctx.beginPath();
-    ctx.ellipse(cx, cy, w / 2, h / 2, 0, 0, Math.PI * 2);
-    ctx.fill();
-  }
-
-  ctx.fillStyle = '#2b1b45';
-  ctx.fillRect(0, horizon, W, H - horizon);
-
-  const ridge = (color: string, baseY: number, amp: number, seed: number) => {
-    const r = rng(seed);
-    const p = [r() * 6, r() * 6, r() * 6];
-    ctx.fillStyle = color;
-    ctx.beginPath();
-    ctx.moveTo(0, H);
-    for (let x = 0; x <= W; x += 8) {
-      const n = Math.sin(x * 0.004 + p[0]) * 0.5 + Math.sin(x * 0.011 + p[1]) * 0.3 + Math.sin(x * 0.027 + p[2]) * 0.2;
-      ctx.lineTo(x, baseY - amp * (1 - Math.abs(n)));
-    }
-    ctx.lineTo(W, H);
-    ctx.closePath();
-    ctx.fill();
-  };
-  ridge('#a8587f', 590, 95, 11);
-  ridge('#6e3f78', 635, 125, 12);
-  ridge('#40285b', 700, 100, 13);
-  ridge('#2b1b45', 770, 60, 14);
   return finish(canvas);
 }
 
