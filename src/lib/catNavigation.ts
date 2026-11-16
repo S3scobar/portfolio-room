@@ -12,14 +12,14 @@ export const FLOOR_BOUNDS = { minX: -2.3, maxX: 2.3, minZ: -2.3, maxZ: 2.3 } as 
 export const FLOOR_OBSTACLES: FloorObstacle[] = [
   { id: 'escritorio', min: [-1.3, -2.3], max: [1.3, -1.3] },
   { id: 'silla', min: [-0.35, -1.45], max: [0.35, -0.85] },
-  { id: 'cama', min: [0.95, -0.75], max: [2.15, 1.5] },
+  { id: 'cama', min: [-2.45, 1.34], max: [-0.35, 2.46] },
   { id: 'morral-y-ukelele', min: [-2.4, -1.8], max: [-1.4, -1.3] },
 ];
 
 /** Puntos libres del suelo y alfombra azul. `sitSpot` = lugares donde le gusta sentarse. */
 export const CAT_WAYPOINTS: CatWaypoint[] = [
-  { id: 'esquina-frente-izq', position: [-1.9, 1.7] },
-  { id: 'frente-centro-izq', position: [-0.8, 1.9] },
+  { id: 'esquina-frente-der', position: [1.8, 1.8] },
+  { id: 'lado-derecho', position: [1.7, 0.3], sitSpot: true },
   { id: 'frente-centro', position: [0.3, 1.8] },
   { id: 'alfombra-frente', position: [0.45, 0.7], sitSpot: true },
   { id: 'alfombra-izq', position: [-0.6, 0.5] },
