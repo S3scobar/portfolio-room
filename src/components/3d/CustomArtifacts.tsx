@@ -12,6 +12,7 @@ import { Ink, RBox } from './parts';
 import {
   aguilasFlagTexture,
   bookSpineTexture,
+  interstellarPosterTexture,
   lumosBoxTexture,
   pinTexture,
   rng,
@@ -52,15 +53,14 @@ function Mat({
 // Pared: posters y banderas
 // ---------------------------------------------------------------------------
 
-function FramedPoster({
-  texturePath,
+function PosterFrame({
+  tex,
   maxW,
   maxH,
   frame,
   glow,
   accent,
-}: V & { texturePath: string; maxW: number; maxH: number; frame: string }) {
-  const tex = useTexture(texturePath);
+}: V & { tex: THREE.Texture; maxW: number; maxH: number; frame: string }) {
   const img = tex.image as { width: number; height: number };
   const aspect = img.width / img.height;
   let w = maxW;
@@ -78,6 +78,18 @@ function FramedPoster({
       </mesh>
     </group>
   );
+}
+
+/** Poster con imagen de /public/textures. */
+function FramedPoster({ texturePath, ...rest }: V & { texturePath: string; maxW: number; maxH: number; frame: string }) {
+  const tex = useTexture(texturePath);
+  return <PosterFrame tex={tex} {...rest} />;
+}
+
+/** Poster dibujado por codigo (canvas), sin imagen externa. */
+function InterstellarPoster(props: V & { maxW: number; maxH: number; frame: string }) {
+  const tex = useMemo(() => interstellarPosterTexture(), []);
+  return <PosterFrame tex={tex} {...props} />;
 }
 
 function HangingFlag({
@@ -603,7 +615,7 @@ export function CustomArtifactModel({ id, glow, accent }: CustomArtifactModelPro
     case 'poster-hp':
       return <FramedPoster texturePath="/textures/poster-hp.webp" maxW={0.8} maxH={0.7} frame="#2a2421" {...v} />;
     case 'poster-interstellar':
-      return <FramedPoster texturePath="/textures/poster-interstellar.webp" maxW={0.62} maxH={0.62} frame="#1c2433" {...v} />;
+      return <InterstellarPoster maxW={0.62} maxH={0.72} frame="#16181c" {...v} />;
     case 'poster-dune-sw-marvel':
       return <FramedPoster texturePath="/textures/poster-dune.webp" maxW={0.7} maxH={0.7} frame="#3a2a18" {...v} />;
     case 'poster-cr7':

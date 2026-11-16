@@ -39,21 +39,6 @@ function finish(canvas: HTMLCanvasElement, wrap = false) {
 const shade = (hex: string, l: number) =>
   `#${new THREE.Color(hex).offsetHSL(0, 0, l).getHexString()}`;
 
-/** Dibuja texto a lo largo de un arco. `bottom` invierte el sentido para que se lea de izquierda a derecha. */
-function arcText(ctx: Ctx, text: string, cx: number, cy: number, radius: number, span: number, bottom = false) {
-  const chars = [...text];
-  const step = span / Math.max(1, chars.length - 1);
-  const center = bottom ? Math.PI / 2 : -Math.PI / 2;
-  chars.forEach((ch, i) => {
-    const a = bottom ? center + span / 2 - i * step : center - span / 2 + i * step;
-    ctx.save();
-    ctx.translate(cx + radius * Math.cos(a), cy + radius * Math.sin(a));
-    ctx.rotate(bottom ? a - Math.PI / 2 : a + Math.PI / 2);
-    ctx.fillText(ch, 0, 0);
-    ctx.restore();
-  });
-}
-
 // ---------------------------------------------------------------------------
 // Entorno
 // ---------------------------------------------------------------------------
@@ -258,73 +243,429 @@ export function lightBeamTexture() {
 // Objetos
 // ---------------------------------------------------------------------------
 
-/** Bandera UNAL: verde arriba, blanco abajo, sello circular y texto de la Facultad de Minas. */
+/** Escudo de la Universidad Nacional de Colombia. Coordenadas locales: centro del anillo de texto = (0,0), eje y hacia abajo. */
+function drawUnalCrest(ctx: Ctx) {
+  const GRAY = '#5a5f63';
+  const RED = '#9a1b2e';
+  const LEAF = ['#7fae3d', '#4f8a2c'];
+  const white = '#ffffff';
+
+  // Corona de laurel a ambos lados del escudo
+  for (const s of [-1, 1]) {
+    for (let i = 0; i < 15; i++) {
+      const phi = 0.5 + (i / 14) * 2.3;
+      const x = s * 60 * Math.sin(phi);
+      const y = -10 - 68 * Math.cos(phi);
+      const tangent = Math.atan2(68 * Math.sin(phi), s * 60 * Math.cos(phi));
+      const off = i % 2 === 0 ? 4 : -3;
+      ctx.save();
+      ctx.translate(x + off * Math.cos(tangent + Math.PI / 2), y + off * Math.sin(tangent + Math.PI / 2));
+      ctx.rotate(tangent + (i % 2 === 0 ? 0.35 : -0.35) * s);
+      ctx.fillStyle = LEAF[i % 2];
+      ctx.beginPath();
+      ctx.ellipse(0, 0, 9.5, 4.2, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+  }
+
+  // Condor
+  ctx.save();
+  ctx.translate(0, -88);
+  const dark = '#2d3033';
+  for (const s of [-1, 1]) {
+    ctx.fillStyle = dark;
+    ctx.beginPath();
+    ctx.moveTo(s * 5, 2);
+    ctx.quadraticCurveTo(s * 22, -18, s * 38, -8);
+    ctx.lineTo(s * 34, -2);
+    ctx.lineTo(s * 37, 4);
+    ctx.lineTo(s * 30, 5);
+    ctx.lineTo(s * 31, 11);
+    ctx.lineTo(s * 23, 9);
+    ctx.lineTo(s * 21, 15);
+    ctx.lineTo(s * 13, 10);
+    ctx.lineTo(s * 6, 14);
+    ctx.closePath();
+    ctx.fill();
+    ctx.strokeStyle = '#c9ccce';
+    ctx.lineWidth = 0.7;
+    for (const [x1, y1, x2, y2] of [[10, 0, 28, -4], [10, 4, 29, 3], [10, 8, 24, 9]]) {
+      ctx.beginPath();
+      ctx.moveTo(s * x1, y1);
+      ctx.lineTo(s * x2, y2);
+      ctx.stroke();
+    }
+  }
+  ctx.fillStyle = dark;
+  ctx.beginPath();
+  ctx.ellipse(0, 4, 7, 12, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = '#e9ebec';
+  ctx.fillRect(-5, -7, 10, 2.5);
+  ctx.fillStyle = dark;
+  ctx.beginPath();
+  ctx.arc(0.5, -12, 4.6, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = '#8c9094';
+  ctx.beginPath();
+  ctx.moveTo(4, -14);
+  ctx.quadraticCurveTo(10, -13, 8, -8);
+  ctx.quadraticCurveTo(6, -11, 3.5, -10);
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
+
+  // Escudo cuartelado
+  const shield = new Path2D();
+  shield.moveTo(-46, -60);
+  shield.lineTo(46, -60);
+  shield.lineTo(46, 4);
+  shield.quadraticCurveTo(46, 32, 0, 46);
+  shield.quadraticCurveTo(-46, 32, -46, 4);
+  shield.closePath();
+  ctx.save();
+  ctx.clip(shield);
+  ctx.fillStyle = RED;
+  ctx.fillRect(-46, -60, 46, 44);
+  ctx.fillRect(0, -16, 46, 66);
+  ctx.fillStyle = GRAY;
+  ctx.fillRect(0, -60, 46, 44);
+  ctx.fillRect(-46, -16, 46, 66);
+  ctx.restore();
+  ctx.strokeStyle = '#3d4144';
+  ctx.lineWidth = 2;
+  ctx.stroke(shield);
+  ctx.strokeStyle = white;
+  ctx.lineWidth = 1.2;
+  ctx.beginPath();
+  ctx.moveTo(0, -60);
+  ctx.lineTo(0, 46);
+  ctx.moveTo(-46, -16);
+  ctx.lineTo(46, -16);
+  ctx.stroke();
+
+  ctx.strokeStyle = white;
+  ctx.fillStyle = white;
+  ctx.lineWidth = 2;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+
+  // Balanza (cuartel superior izquierdo)
+  ctx.save();
+  ctx.translate(-23, -38);
+  ctx.beginPath();
+  ctx.moveTo(0, -13);
+  ctx.lineTo(0, 12);
+  ctx.moveTo(-7, 12);
+  ctx.lineTo(7, 12);
+  ctx.moveTo(-14, -8);
+  ctx.lineTo(14, -8);
+  ctx.stroke();
+  ctx.lineWidth = 1.2;
+  for (const x of [-12, 12]) {
+    ctx.beginPath();
+    ctx.moveTo(x, -8);
+    ctx.lineTo(x - 6, 3);
+    ctx.moveTo(x, -8);
+    ctx.lineTo(x + 6, 3);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(x, 3, 6, 0, Math.PI);
+    ctx.closePath();
+    ctx.fill();
+  }
+  ctx.restore();
+
+  // Copa de Higia con serpiente (cuartel superior derecho)
+  ctx.save();
+  ctx.translate(23, -38);
+  ctx.lineWidth = 2.2;
+  ctx.beginPath();
+  ctx.arc(0, -3, 9, 0.1, Math.PI - 0.1);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(0, 6);
+  ctx.lineTo(0, 12);
+  ctx.moveTo(-6, 12);
+  ctx.lineTo(6, 12);
+  ctx.stroke();
+  ctx.lineWidth = 1.8;
+  ctx.beginPath();
+  ctx.moveTo(-1, 7);
+  ctx.bezierCurveTo(10, 3, -9, -4, 2, -10);
+  ctx.bezierCurveTo(5, -12, 8, -14, 6, -16);
+  ctx.stroke();
+  ctx.restore();
+
+  // Numero pi (cuartel inferior izquierdo)
+  ctx.fillStyle = white;
+  ctx.font = '700 34px Georgia, "Times New Roman", serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('\u03c0', -23, 8);
+
+  // Arpa (cuartel inferior derecho)
+  ctx.save();
+  ctx.translate(23, 10);
+  ctx.lineWidth = 2.2;
+  ctx.beginPath();
+  ctx.moveTo(10, -16);
+  ctx.lineTo(10, 14);
+  ctx.moveTo(10, -16);
+  ctx.quadraticCurveTo(-11, -16, -10, 0);
+  ctx.moveTo(-10, 0);
+  ctx.lineTo(10, 14);
+  ctx.stroke();
+  ctx.lineWidth = 1.1;
+  for (const x of [-6, -2, 2, 6]) {
+    const top = -14 + 14 * Math.pow((10 - x) / 20, 1.5);
+    const bottom = 1 + ((x + 10) / 20) * 13;
+    ctx.beginPath();
+    ctx.moveTo(x, top);
+    ctx.lineTo(x, bottom);
+    ctx.stroke();
+  }
+  ctx.restore();
+
+  // Escudete central con espiga
+  const mini = new Path2D();
+  mini.moveTo(-11, -29);
+  mini.lineTo(11, -29);
+  mini.lineTo(11, -12);
+  mini.quadraticCurveTo(11, -2, 0, 3);
+  mini.quadraticCurveTo(-11, -2, -11, -12);
+  mini.closePath();
+  ctx.fillStyle = '#4f8f3a';
+  ctx.fill(mini);
+  ctx.strokeStyle = white;
+  ctx.lineWidth = 1.6;
+  ctx.stroke(mini);
+  ctx.strokeStyle = '#eef6e4';
+  ctx.lineWidth = 1.1;
+  ctx.beginPath();
+  ctx.moveTo(0, -4);
+  ctx.lineTo(0, -24);
+  ctx.stroke();
+  for (let i = 0; i < 4; i++) {
+    const y = -8 - i * 4.5;
+    ctx.beginPath();
+    ctx.moveTo(0, y);
+    ctx.lineTo(-5, y - 4);
+    ctx.moveTo(0, y);
+    ctx.lineTo(5, y - 4);
+    ctx.stroke();
+  }
+
+  // Cinta con el lema
+  ctx.fillStyle = white;
+  ctx.strokeStyle = '#3d4144';
+  ctx.lineWidth = 1.6;
+  ctx.beginPath();
+  ctx.moveTo(-56, 44);
+  ctx.quadraticCurveTo(0, 66, 56, 44);
+  ctx.lineTo(56, 58);
+  ctx.quadraticCurveTo(0, 80, -56, 58);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+  const motto = 'INTER AULAS ACADEMIAE OLIM VERBUM';
+  ctx.fillStyle = '#3d4144';
+  ctx.font = '700 4.8px Arial, sans-serif';
+  const chars = [...motto];
+  chars.forEach((ch, i) => {
+    const t = (i + 0.5) / chars.length;
+    const x = -50 + 100 * t;
+    const y = 51 + 32 * t * (1 - t);
+    ctx.save();
+    ctx.translate(x, y + 2);
+    ctx.rotate(Math.atan2(32 * (1 - 2 * t), 100));
+    ctx.fillText(ch, 0, 0);
+    ctx.restore();
+  });
+  ctx.lineCap = 'butt';
+  ctx.lineJoin = 'miter';
+}
+
+/** Anillo de texto "UNIVERSIDAD NACIONAL DE COLOMBIA" con NACIONAL mas grande, puntos y el anio 1867. */
+function drawUnalRing(ctx: Ctx, radius: number) {
+  const parts = [
+    { text: 'UNIVERSIDAD', size: 24 },
+    { text: 'NACIONAL', size: 40 },
+    { text: 'DE COLOMBIA', size: 24 },
+  ];
+  const gap = 0.22;
+  const tracking = 3.2;
+  type Glyph = { ch: string; size: number; w: number };
+  const words: Glyph[][] = parts.map((p) => {
+    ctx.font = `500 ${p.size}px "Helvetica Neue", Helvetica, Arial, sans-serif`;
+    return [...p.text].map((ch) => ({ ch, size: p.size, w: ctx.measureText(ch).width + tracking }));
+  });
+  const arc = (g: Glyph) => g.w / radius;
+  const total = words.reduce((s, w) => s + w.reduce((a, g) => a + arc(g), 0), 0) + gap * (words.length - 1);
+  let a = -Math.PI / 2 - total / 2;
+  const start = a;
+  ctx.fillStyle = '#585d61';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'alphabetic';
+  words.forEach((word) => {
+    word.forEach((g) => {
+      const mid = a + arc(g) / 2;
+      ctx.font = `500 ${g.size}px "Helvetica Neue", Helvetica, Arial, sans-serif`;
+      ctx.save();
+      ctx.translate(radius * Math.cos(mid), radius * Math.sin(mid));
+      ctx.rotate(mid + Math.PI / 2);
+      ctx.fillText(g.ch, 0, 0);
+      ctx.restore();
+      a += arc(g);
+    });
+    a += gap;
+  });
+  const end = a - gap;
+  for (const ang of [start - 0.12, end + 0.12]) {
+    ctx.beginPath();
+    ctx.arc((radius + 4) * Math.cos(ang), (radius + 4) * Math.sin(ang), 2.6, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.save();
+  ctx.translate(0, radius - 8);
+  ctx.rotate(0.05);
+  ctx.font = 'italic 300 28px "Helvetica Neue", Helvetica, Arial, sans-serif';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('1867', 0, 0);
+  ctx.restore();
+}
+
+/** Bandera UNAL: paño blanco con el escudo institucional y el anillo "Universidad Nacional de Colombia 1867". */
 export function unalFlagTexture() {
   const W = 1024;
   const H = 640;
   const { canvas, ctx } = makeCanvas(W, H);
-  ctx.fillStyle = '#1d7a3e';
-  ctx.fillRect(0, 0, W, H / 2);
   ctx.fillStyle = '#ffffff';
-  ctx.fillRect(0, H / 2, W, H / 2);
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
+  ctx.fillRect(0, 0, W, H);
+  const k = 1.25;
+  ctx.save();
+  ctx.translate(W / 2, H / 2 + 12 * k);
+  ctx.scale(k, k);
+  drawUnalRing(ctx, 124);
+  drawUnalCrest(ctx);
+  ctx.restore();
+  ctx.strokeStyle = '#e4e7e8';
+  ctx.lineWidth = 4;
+  ctx.strokeRect(2, 2, W - 4, H - 4);
+  return finish(canvas);
+}
 
-  ctx.fillStyle = '#ffffff';
-  ctx.font = '700 44px Georgia, serif';
-  ctx.fillText('UNIVERSIDAD NACIONAL DE COLOMBIA', W / 2, 72);
+/** Poster minimalista de Interstellar: lineas doradas de Gargantua sobre fondo oscuro. */
+export function interstellarPosterTexture() {
+  const SC = 2;
+  const W = 564;
+  const H = 798;
+  const { canvas, ctx } = makeCanvas(W * SC, H * SC);
+  ctx.scale(SC, SC);
 
-  const cx = W / 2;
-  const cy = H / 2;
-  ctx.fillStyle = '#e6c24a';
-  ctx.beginPath();
-  ctx.arc(cx, cy, 158, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.fillStyle = '#1d7a3e';
-  ctx.beginPath();
-  ctx.arc(cx, cy, 148, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.fillStyle = '#ffffff';
-  ctx.beginPath();
-  ctx.arc(cx, cy, 100, 0, Math.PI * 2);
-  ctx.fill();
+  const bg = ctx.createRadialGradient(W / 2, 260, 40, W / 2, 360, 620);
+  bg.addColorStop(0, '#17181c');
+  bg.addColorStop(1, '#0b0c0e');
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, W, H);
+  const rand = rng(1014);
+  for (let i = 0; i < 2600; i++) {
+    ctx.fillStyle = `rgba(255,255,255,${0.015 + rand() * 0.03})`;
+    ctx.fillRect(rand() * W, rand() * H, 1, 1);
+  }
 
-  ctx.fillStyle = '#ffffff';
-  ctx.font = '700 25px Georgia, serif';
-  arcText(ctx, 'FACULTAD DE MINAS', cx, cy, 124, 2.5, false);
-  arcText(ctx, 'MEDELLIN', cx, cy, 124, 1.1, true);
+  const cx = 320;
+  const cy = 215;
+  const R = 62;
+  const L = { x: -8, y: 263 };
+  const T = { x: 572, y: 176 };
 
-  // Escudo estilizado
-  ctx.fillStyle = '#1d7a3e';
+  for (const tip of [{ x: 40, y: 256 }, { x: 530, y: 184 }]) {
+    const g = ctx.createRadialGradient(tip.x, tip.y, 0, tip.x, tip.y, 90);
+    g.addColorStop(0, 'rgba(247,207,58,0.22)');
+    g.addColorStop(1, 'rgba(247,207,58,0)');
+    ctx.fillStyle = g;
+    ctx.fillRect(tip.x - 90, tip.y - 90, 180, 180);
+  }
+
+  const N = 9;
+  ctx.lineWidth = 0.9;
+  for (let i = 0; i < N; i++) {
+    const d = 8 + i * 4.6;
+    const mix = i / (N - 1);
+    const mid = `rgb(${Math.round(240 - 8 * mix)},${Math.round(190 + 25 * mix)},${Math.round(70 + 90 * mix)})`;
+    const grad = ctx.createLinearGradient(0, 0, W, 0);
+    grad.addColorStop(0, '#f7cf3a');
+    grad.addColorStop(0.3, mid);
+    grad.addColorStop(0.7, mid);
+    grad.addColorStop(1, '#f7cf3a');
+    ctx.strokeStyle = grad;
+    for (const dir of [-1, 1]) {
+      const peak = cy + dir * (R + d);
+      const c = (8 * peak - L.y - T.y) / 6;
+      ctx.beginPath();
+      ctx.moveTo(L.x, L.y);
+      ctx.bezierCurveTo(150, c, 470, c, T.x, T.y);
+      ctx.stroke();
+    }
+  }
+
+  // Horizonte de sucesos y eje del disco
+  ctx.strokeStyle = '#f4f4f1';
+  ctx.lineWidth = 1.3;
   ctx.beginPath();
-  ctx.moveTo(cx - 52, cy - 62);
-  ctx.lineTo(cx + 52, cy - 62);
-  ctx.lineTo(cx + 52, cy + 6);
-  ctx.quadraticCurveTo(cx + 52, cy + 56, cx, cy + 74);
-  ctx.quadraticCurveTo(cx - 52, cy + 56, cx - 52, cy + 6);
-  ctx.closePath();
-  ctx.fill();
-  ctx.strokeStyle = '#e6c24a';
-  ctx.lineWidth = 5;
+  ctx.arc(cx, cy, R, 0, Math.PI * 2);
   ctx.stroke();
-  ctx.fillStyle = '#ffffff';
-  ctx.font = '700 40px Georgia, serif';
-  ctx.fillText('UNAL', cx, cy - 12);
-  ctx.fillStyle = '#e6c24a';
-  ctx.fillRect(cx - 34, cy + 10, 68, 5);
   ctx.beginPath();
-  ctx.arc(cx, cy + 36, 12, 0, Math.PI * 2);
-  ctx.fill();
+  ctx.moveTo(-6, 263.6);
+  ctx.lineTo(570, 176);
+  ctx.stroke();
+  ctx.lineWidth = 1.1;
+  for (const [x, y, r] of [[131, 364, 6.5], [433, 280, 6.5], [373, 466, 7.5]]) {
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.stroke();
+  }
 
-  ctx.fillStyle = '#1d7a3e';
-  ctx.font = '700 34px Georgia, serif';
-  ctx.fillText('FACULTAD DE MINAS', W / 2, 520);
-  ctx.font = '600 27px Georgia, serif';
-  ctx.fillText('INGENIERIA DE SISTEMAS E INFORMATICA', W / 2, 568);
-
-  ctx.strokeStyle = '#e6c24a';
-  ctx.lineWidth = 10;
-  ctx.strokeRect(5, 5, W - 10, H - 10);
+  // Tipografia
+  const spaced = (text: string, y: number, size: number, tracking: number, weight: number, color: string, maxW = W) => {
+    let s = size;
+    let t = tracking;
+    const width = () => {
+      ctx.font = `${weight} ${s}px "Helvetica Neue", Helvetica, Arial, sans-serif`;
+      return [...text].reduce((a, ch) => a + ctx.measureText(ch).width, 0) + t * (text.length - 1);
+    };
+    while (width() > maxW && s > 3) {
+      s -= 0.25;
+      t *= 0.98;
+    }
+    let x = (W - width()) / 2;
+    ctx.fillStyle = color;
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'alphabetic';
+    for (const ch of text) {
+      ctx.fillText(ch, x, y);
+      x += ctx.measureText(ch).width + t;
+    }
+  };
+  spaced('A FILM BY CHRISTOPHER NOLAN', 606, 8, 1.6, 600, '#d9d9d6');
+  spaced('INTERSTELLAR', 641, 27, 13, 300, '#f2f2ef', 360);
+  const credit = '#85878b';
+  spaced('PARAMOUNT PICTURES AND WARNER BROS. PICTURES PRESENT', 655, 5.2, 0.6, 400, credit, 300);
+  spaced('IN ASSOCIATION WITH LEGENDARY PICTURES A SYNCOPY/LINDA OBST PRODUCTIONS PRODUCTION', 662, 4.8, 0.4, 400, credit, 330);
+  spaced('A FILM BY CHRISTOPHER NOLAN  \u201cINTERSTELLAR\u201d  MATTHEW McCONAUGHEY  ANNE HATHAWAY', 669, 4.8, 0.4, 400, credit, 330);
+  spaced('JESSICA CHASTAIN  BILL IRWIN  ELLEN BURSTYN  AND MICHAEL CAINE  MARY ZOPHRES  HANS ZIMMER', 676, 4.8, 0.4, 400, credit, 400);
+  spaced('JORDAN GOLDBERG  JAKE MYERS  KIP THORNE  JONATHAN NOLAN AND CHRISTOPHER NOLAN', 683, 4.8, 0.4, 400, credit, 360);
+  spaced('EMMA THOMAS  CHRISTOPHER NOLAN  LYNDA OBST  CHRISTOPHER NOLAN', 690, 4.8, 0.4, 400, credit, 330);
+  ctx.fillStyle = '#6e7074';
+  ctx.textBaseline = 'middle';
+  ctx.font = '700 7px "Helvetica Neue", Helvetica, Arial, sans-serif';
+  ctx.textAlign = 'left';
+  ctx.fillText('LEGENDARY', 116, 713);
+  ctx.textAlign = 'right';
+  ctx.fillText('IMAX', 448, 713);
+  spaced('NOVEMBER 2014', 716, 9.5, 2.8, 500, '#e7e7e3');
   return finish(canvas);
 }
 
