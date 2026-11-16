@@ -90,14 +90,13 @@ export const ROOM_LORE: RoomArtifactSeed[] = [
     defaultScale: [1, 1, 1],
     geometryType: 'poster',
   },
-  // 6. Póster Dune, Star Wars & Marvel - Pared izquierda en sección libre (sin tapar la ventana: z = -1.8)
+  // 6. Póster Dune - Pared izquierda en sección libre, entre la ventana y la esquina del fondo (z = -1.85)
   {
     id: 'poster-dune-sw-marvel',
-    title: 'Dune · Star Wars · Marvel',
-    subtitle: 'Universos Sci-Fi & Fantasía',
+    title: 'Dune',
+    subtitle: 'Arrakis al atardecer',
     category: 'cine_libros',
     description: 'Desde Arrakis hasta una galaxia muy lejana: las sagas que inspiran mi lado creativo.',
-    texturePath: '/textures/poster-dune.webp',
     accentColor: '#D97706',
     defaultPosition: [-2.5, 2.1, -1.85],
     defaultRotation: [0, Math.PI / 2, 0],
@@ -141,9 +140,9 @@ export const ROOM_LORE: RoomArtifactSeed[] = [
     description: 'Mi consola de cabecera para desconectar entre semestres y partidas nocturnas.',
     texturePath: '/textures/xbox-series-s.webp',
     accentColor: '#F8FAFC',
-    defaultPosition: [0.8, 0.78, -1.88],
+    defaultPosition: [0.75, 0.78, -1.9],
     defaultRotation: [0, -0.15, 0],
-    defaultScale: [1, 1, 1],
+    defaultScale: [1.4, 1.4, 1.4],
     geometryType: 'prop_box',
   },
   // 10. Cubo de Rubik 3x3 - Apoyado en el escritorio (x = -0.42, y = 0.83, z = -1.65)
@@ -174,18 +173,19 @@ export const ROOM_LORE: RoomArtifactSeed[] = [
     defaultScale: [1, 1, 1],
     geometryType: 'prop_box',
   },
-  // 12. Ukelele acústico - Apoyado contra el costado izquierdo del escritorio (x = -1.26, y = 0.55, z = -1.7)
+  // 12. Ukelele acústico - Recostado contra la pared izquierda, junto a la ventana (lado del fondo, z = -1.62).
+  // Rotación Euler XYZ equivalente a: girar 90° en Y (cara hacia la habitación) e inclinar 0.2 rad hacia el muro.
   {
     id: 'ukulele-wood',
     title: 'Ukelele Acústico',
     subtitle: 'Acordes entre líneas de código',
     category: 'musica_hobbies',
-    description: 'Siempre a la mano junto al escritorio para despejar la mente.',
+    description: 'Siempre a la mano junto a la ventana para despejar la mente.',
     texturePath: '/textures/ukulele.webp',
     accentColor: '#B45309',
-    defaultPosition: [-1.27, 0, -1.4],
-    defaultRotation: [0, 0.15, -0.14],
-    defaultScale: [1, 1, 1],
+    defaultPosition: [-2.31, 0.008, -1.62],
+    defaultRotation: [-Math.PI / 2, 1.3708, Math.PI / 2],
+    defaultScale: [1.45, 1.45, 1.45],
     geometryType: 'prop_box',
   },
   // 13. Retrato de Milo - Apoyado sobre el escritorio junto al monitor (x = -0.7, y = 0.92, z = -1.95)
@@ -243,5 +243,18 @@ export const ROOM_LORE: RoomArtifactSeed[] = [
     defaultRotation: [0, 0.2, 0],
     defaultScale: [1, 1, 1],
     geometryType: 'prop_box',
+  },
+  // 17. Póster Muestra de Proyectos (SAMI) - Pared del fondo, a la izquierda bajo el póster de Harry Potter
+  {
+    id: 'poster-muestra-proyectos',
+    title: 'Muestra de Proyectos en Ingeniería · SAMI',
+    subtitle: 'Facultad de Minas · UNAL Sede Medellín',
+    category: 'academico',
+    description: 'El póster de SAMI, un wearable de monitoreo para adultos mayores que sufren soledad, que presenté en la Muestra de Proyectos junto a mi equipo.',
+    accentColor: '#1E6B8C',
+    defaultPosition: [-1.9, 1.22, -2.5],
+    defaultRotation: [0, 0, 0],
+    defaultScale: [1, 1, 1],
+    geometryType: 'poster',
   },
 ];

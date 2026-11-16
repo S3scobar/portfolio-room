@@ -60,10 +60,10 @@ Antes, `defaultScale` era el tamaño de una caja con foto. Ahora:
 | id | Modelo procedural | Notas |
 |---|---|---|
 | `flag-unal`, `flag-aguilas` | Asta de madera + remates + tela (caja delgada con la bandera en ambas caras), 0.82×0.51 m | Texturas Canvas 2D (`unalFlagTexture`, `aguilasFlagTexture`); águila dorada `#D4AF37` |
-| `poster-hp`, `poster-interstellar`, `poster-dune-sw-marvel`, `poster-cr7` | Marco biselado + plano con la textura sin deformar | `poster-hp` es una foto 4:3 horizontal |
+| `poster-hp`, `poster-interstellar`, `poster-dune-sw-marvel`, `poster-muestra-proyectos`, `poster-cr7` | Marco biselado + plano con la textura sin deformar | `poster-hp` y `poster-cr7` usan imagen; Interstellar (`interstellarPosterTexture`), Dune y Muestra de Proyectos/SAMI (`src/lib/posterTextures.ts`) se dibujan con Canvas 2D |
 | `xbox-series-s` | Consola 275×63.5×151 mm con rejilla circular negra + control blanco/verde | Control en el mismo grupo |
 | `rubik-cube` | 27 cubitos biselados + 54 stickers, colores reales | Mezcla determinista (`rng(42)`) |
-| `ukulele-wood` | Cuerpo en 8 (extrusión), boca y roseta, puente, mástil, 12 trastes, clavijero con 4 clavijas, 4 cuerdas | Apoyado contra la pata del escritorio |
+| `ukulele-wood` | Cuerpo en 8 (extrusión), boca y roseta, puente, mástil, 12 trastes, clavijero con 4 clavijas, 4 cuerdas | Escala 1.45, recostado contra la pared izquierda junto al ventanal (rotación Euler XYZ `[-π/2, 1.37, π/2]`) |
 | `books-stephen-king` | 4 libros individuales (tapas, hojas, lomo con título): La Cúpula, Dune, Mesías de Dune, 11/22/63 | Sobre la repisa baja |
 | `lightbox-lumos` | Caja negra con panel blanco emisivo "LUMOS MAXIMA" + `pointLight` suave | Sobre la repisa alta |
 | `totto-backpack-pins` | Mochila azul oscuro/negra, bolsillos, asa y 8 pines metálicos | Junto al escritorio |
@@ -72,9 +72,13 @@ Antes, `defaultScale` era el tamaño de una caja con foto. Ahora:
 | `photo-milo` | Marco de escritorio con la foto enderezada (`milo-upright.webp`) | |
 | `music-avicii-garrix` | Cajón con 2 fundas, disco de vinilo y audífonos | Genérico: no se inventan portadas de artistas |
 
-Texturas `poster-cr7`, `poster-dune`, `poster-interstellar` son tarjetas de texto generadas (placeholders), no fotos reales. `rubik.webp`, `xbox-series-s.webp` y `lumos-box.webp` ya no se usan.
+Las texturas `poster-cr7` son una tarjeta de texto generada (placeholder); `poster-dune.webp` y `poster-interstellar.webp` ya no se usan. `rubik.webp`, `xbox-series-s.webp` y `lumos-box.webp` ya no se usan.
 
 `ArtifactMesh.tsx` conserva solo la interacción (hover, clic, escala animada) y delega la geometría en `CustomArtifactModel`. Glow: hover `0.3`, selección `0.5`.
+
+## Vista exterior del ventanal — `WindowView` (`src/lib/windowView.ts`)
+- Siete planos con alfa (cielo, nubes, montañas, torres, árboles, casas, calle) a 100 → 13.5 m de la cámara inicial `[3.8, 3.2, 4.2]`, orientados hacia ella y escalados con la distancia: desde esa cámara componen una sola imagen y al orbitar se separan (parallax).
+- Si se cambia la cámara inicial de `RoomCanvas`, actualizar `WINDOW_VIEW.camera`.
 
 ## Milo — `MiloCat`
 - Gato atigrado café/gris con rayas, ojos verdes de pupila vertical, bigotes, orejas, 4 patas y cola de 7 segmentos con anillos.
