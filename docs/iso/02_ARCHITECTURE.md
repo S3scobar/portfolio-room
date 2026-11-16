@@ -11,6 +11,10 @@
 - `src/components/3d/parts.tsx` — `Ink` (contorno de tinta) y `RBox` (caja biselada con contorno).
 - `src/lib/canvasTextures.ts` — texturas Canvas 2D (paredes, piso, cielo, banderas, lomos, caja de luz, pines).
 - `src/lib/catNavigation.ts` — navegación de Milo (lógica pura, verificable con Node).
+- `src/components/3d/PlayerCharacter.tsx` — avatar jugable (S2-T2).
+- `src/components/3d/CameraController.tsx` — cámara orbital con seguimiento y modo escritorio (S1-T1 + S2-T2).
+- `src/lib/playerNavigation.ts` — movimiento, colisiones y proximidad del jugador (lógica pura, verificable con Node).
+- `src/data/appsRegistry.ts` — las 12 apps del Mini-OS (`PORTFOLIO_APPS`); sus `id` alimentan `openAppId` (S2-T4).
 - `public/textures/milo-upright.webp`, `public/textures/badge-minas-card.webp` — derivadas de las fotos originales (generadas con `scripts/generate-derived-textures.js`; los originales no se tocan).
 
 Alias de import: `@/*` → `src/*` (ver `tsconfig.json`).
@@ -34,6 +38,7 @@ Milo no añade estado: su clic usa `selectArtifact('photo-milo')` y reutiliza la
 - **S1-T2** `AtmosphereLighting`, `AtmospherePostprocessing`.
 - **S1-T3** `RoomArtifactSeed`, `RoomArtifact`, `ArtifactInteractionState`, `ArtifactLoreCard`, `ArtifactCategory`.
 - **S1-T4** `ArtifactTransform`, `CalibrationExportEntry`, `CalibrationExport`.
+- **S2-T1** `PlayerState` (los cinco campos del jugador), `PlayerTarget` (`id`, `position [x,z]`, `reach?`), `PlayerConfig` (velocidad, radio, límites ±2.2, radio de interacción, histéresis, aparición), `CameraPose` (`position`, `target`, `fov`).
 - **Corrección visual** `CustomArtifactModelProps` (`id`, `glow`, `accent`), `CatBehavior` (`'walking' | 'sitting'`), `FloorObstacle` (AABB x,z), `CatWaypoint` (`position`, `sitSpot?`).
 
 ## Convención de transform de los modelos procedurales (CAMBIO DE CONTRATO)
@@ -88,6 +93,55 @@ Las texturas `poster-cr7` son una tarjeta de texto generada (placeholder); `post
 - Prop `pose?: CatBehavior` fija una pose en el origen (solo para verificación visual).
 - Sin estado de React por fotograma: todo vive en refs; los nodos animados se localizan por nombre una vez.
 
+## Sprint 2 — Jugador, proximidad y escritorio (S2-T1, S2-T2)
+
+### Estado del jugador (`PlayerState`, mezclado en `RoomState`)
+| Campo | Tipo | Descripción |
+|---|---|---|
+| `playerPosition` | `Vec3` | Pies del avatar, en metros. Inicial `[0.9, 0, 0.9]`. |
+| `playerRotationY` | `number` | Yaw en radianes. 0 mira a +z; `π` mira a −z (hacia el escritorio). Inicial `π`. |
+| `nearbyTargetId` | `string \| null` | Objetivo interactuable más cercano a < 0.95 m: `'desk-pc'` o un `id` de `ROOM_LORE` (Milo = `'photo-milo'`). |
+| `isAtDesk` | `boolean` | Avatar sentado frente al monitor. |
+| `openAppId` | `string \| null` | `id` de `PORTFOLIO_APPS` abierta en el Mini-OS. |
+
+Acciones y reglas (las implementa `useRoomStore`; Antigravity solo las llama):
+- `setIsAtDesk(true)`: `cameraMode='desk'`, `selectedArtifactId=null`, `nearbyTargetId=null`. `setIsAtDesk(false)`: `openAppId=null`, `cameraMode='orbit'`. Es idempotente.
+- `openApp(id)`: **solo tiene efecto sentado**; de pie no hace nada. `closeApp()`: `openAppId=null`.
+- `setPlayerPose(pos, yaw)` y `setNearbyTarget(id)`: los llama `PlayerCharacter`. La pose se publica solo si cambia más de 4 mm o 0.01 rad; `setNearbyTarget` no emite si el valor no cambia (los suscriptores no se re-renderizan por fotograma).
+- `selectArtifact` / `closeArtifact` respetan el escritorio: sentado, `cameraMode` se queda en `'desk'`.
+- Para el HUD (S2-T3): el prompt de `nearbyTargetId` debe ocultarse si `isAtDesk` o si hay ficha abierta (`selectedArtifactId`). El avatar se queda quieto mientras haya una ficha abierta.
+
+### Movimiento y colisiones (`playerNavigation.ts`)
+- `WASD` y flechas, **relativos a la cámara** (W avanza hacia donde mira la cámara proyectada al suelo). El yaw gira suavemente hacia el avance. Velocidad 1.6 m/s, arranque suavizado.
+- AABB: reutiliza `FLOOR_OBSTACLES` de `catNavigation.ts` (escritorio, silla, cama, morral+ukelele) inflados por el radio del avatar (0.22 m), más límites de ±2.2 m. Si el movimiento diagonal choca, **desliza** por cada eje por separado.
+- Si se mueve algún mueble, cambiar `FLOOR_OBSTACLES`: el gato y el jugador lo comparten.
+- Se ignoran las teclas con el foco en `input`/`textarea`/`select` (el panel Leva) y con `Ctrl`/`Alt`/`Meta`.
+- Los modos no libres (sentándose, sentado, levantándose) ignoran el teclado.
+
+### Proximidad
+- Objetivos: la zona del escritorio `DESK_ZONE = [0, -1.35]` (id `'desk-pc'`), los artefactos de `ROOM_LORE` y Milo. Las posiciones se leen **de la escena** (`artifact-<id>` y `milo-cat`), no del lore estático: respetan la calibración de Leva y el paseo del gato.
+- Radio 0.95 m, con **histéresis de 0.15 m** (el objetivo activo se mantiene hasta 1.10 m) para que el prompt no parpadee. Gana el más cercano.
+- **Alcance extra** (`EXTRA_REACH`) para objetos que el mobiliario impide acercar: `books-stephen-king` +0.4, `lightbox-lumos` +0.4, `flag-aguilas` +0.25. Sin esto su prompt nunca aparecería (a 1.11 m, 1.21 m y 0.95 m del punto caminable más cercano). Se calculó con las posiciones del lore actuales; recalcular si se recalibran.
+- Mientras el avatar se sienta, está sentado o se levanta, `nearbyTargetId` es `null`.
+
+### Sentarse y levantarse
+- El avatar rodea la silla por el lado (`SEAT_SIDE_STEP` `[0.62, -1.0]`), se sienta en `SEAT.position` `[0, -1.2]` mirando a −z, y al levantarse termina en `STAND_SPOT` `[0.7, -0.8]` (caminable, a 0.82 m del escritorio: desde ahí `nearbyTargetId='desk-pc'`).
+- Duración sentarse ≈ 0.9–1.5 s, levantarse 0.9 s. **Cancelar a mitad de camino no es instantáneo**: el avatar completa el paso y se levanta; así nunca queda dentro de un obstáculo.
+- Pose sentada: cadera a 0.58 m, muslos casi horizontales, pantorrillas verticales, antebrazos sobre el teclado.
+
+### Cámara (`CameraController`)
+- **Seguimiento (modo `orbit`):** `OrbitControls` se conserva (arrastrar y zoom). Cámara y punto de mira se desplazan juntos hacia el torso del jugador (`y=1.05`) con suavizado exponencial (rapidez 7/s), así que el ángulo y el zoom elegidos por el usuario se mantienen. Desplazamiento inicial `(3.2, 2.4, 3.7)`.
+- **Escritorio (`isAtDesk`):** tween GSAP de 1.5 s (`power3.inOut`) de posición, objetivo y FOV hacia una pose calculada desde la malla `monitor-screen` (desplazamiento `(0, 0.84, 1.48)`, FOV 28°). `OrbitControls` se desactiva mientras dura el modo escritorio. Si `monitor-screen` no existe, usa `DESK_CAMERA_FALLBACK`.
+- **La pose NO es arbitraria:** con la cámara a `y=1.75` la cabeza del avatar sentado tapaba la fila inferior de la pantalla (8 de 81 puntos de la línea de visión). A `y≈2.0, z≈-0.5` quedan 0/81 tapados. Importa para S2-T4: un `<Html transform occlude>` se ocultaría detrás de la cabeza.
+- Al levantarse, vuelve a la pose de seguimiento que tenía antes de sentarse (1.2 s) y reactiva `OrbitControls`.
+- La cámara por defecto ya no mira al centro de la habitación (`CAMERA_CONSTRAINTS.target` quedó solo como referencia).
+
+### Avatar (`PlayerCharacter`)
+- 1.70 m, procedural, buzo azul con capucha y cordones, vaqueros, zapatillas blancas. Contorno de tinta con el mismo `Ink` del resto de la escena (`<Outlines thickness={0.015} color="#1c1613" screenspace />`).
+- Caminata: piernas en diagonal, brazos opuestos, balanceo del torso y rebote; respiración en reposo. Sin estado de React por fotograma (todo en refs).
+- El avatar no intercepta el raycast, así que no tapa los clics de los artefactos que tiene detrás.
+- `ArtifactMesh` expone cada artefacto como un nodo llamado `artifact-<id>` (lo usa la proximidad).
+
 ## Notas de diseño
 - `RoomArtifact.transform` usa la calibración exportada (S1-T4) o, en su defecto, los campos `default*` de `RoomArtifactSeed`.
 - Rotaciones siempre en radianes.
@@ -102,3 +156,10 @@ Las texturas `poster-cr7` son una tarjeta de texto generada (placeholder); `post
 5. **Verificación visual de objetos.** Hay dudas de legibilidad en tamaño real: el título "LA CUPULA" del lomo, los pines del morral y el cordón de la credencial. Revisar con zoom de cámara.
 6. **Deuda previa (no de este cambio).** `ArtifactsManager.tsx:96` llama `Date.now()` durante el render y `eslint` lo marca (`react-hooks/purity`). No se tocó. El resto de `src/` pasa `eslint` sin errores, y `npm run build` y `tsc --noEmit` pasan limpios.
 7. **Limpieza opcional.** `public/models/room.glb` (4.4 MB), `RoomModel.tsx` y `RoomFurniture.tsx` ya no se usan.
+
+### Sprint 2: pendiente para Antigravity (S2-T3, S2-T4 y QA)
+1. **S2-T3 (HUD).** Leer `nearbyTargetId`: `'desk-pc'` → `[E] Sentarse en el PC`; otro id → `[E] Inspeccionar <title>`. `E` ejecuta `selectArtifact(id)` o `setIsAtDesk(true)`; `Escape` ejecuta `setIsAtDesk(false)` (y `closeArtifact()` si hay ficha). Ocultar el prompt con `isAtDesk` o ficha abierta. **No hay tecla `E` ni `Escape` en este sprint: nada conecta todavía el teclado con `setIsAtDesk`.**
+2. **S2-T4 (Mini-OS).** La cámara de escritorio ya deja el monitor completo a la vista. Anclar `<Html transform occlude>` a `monitor-screen` (`0.9 × 0.52 m`). `openApp(id)` solo funciona sentado.
+3. **Rendimiento.** No se pudo medir en GPU real: el entorno de verificación (SwiftShader) rinde < 2 FPS. Con `dt` limitado a 0.05 s, el avatar avanza ~0.04 m por fotograma a velocidad máxima. Validar a 60 FPS la fluidez del seguimiento de cámara y de la caminata.
+4. **Verificado aquí:** colisiones, deslizamiento, límites, conectividad (no hay celdas caminables inalcanzables salvo el rincón cerrado tras el morral), proximidad con histéresis (Node); y con el navegador: movimiento por teclado, sentarse, cámara de escritorio, levantarse, `openApp` solo sentado, cancelar a mitad de camino y teclado ignorado en campos de texto.
+5. **No verificado visualmente:** la animación de caminata en movimiento continuo (solo poses estáticas por la tasa de fotogramas), y la comodidad de la cámara de seguimiento en el rango completo de zoom/órbita.

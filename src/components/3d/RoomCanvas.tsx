@@ -4,6 +4,7 @@ import React, { Suspense } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { RoomEnvironment } from './RoomEnvironment';
 import { MiloCat } from './MiloCat';
+import { PlayerCharacter } from './PlayerCharacter';
 import { Atmosphere } from './Atmosphere';
 import { CameraController } from './CameraController';
 import { ArtifactsManager } from './ArtifactsManager';
@@ -39,6 +40,9 @@ export function RoomCanvas() {
 
           {/* Milo: gato 3D que camina solo por el suelo; clic abre su ficha (photo-milo) */}
           <MiloCat />
+
+          {/* Avatar jugable: WASD/flechas, colisiones, proximidad y sentarse en el escritorio */}
+          <PlayerCharacter />
 
           {/* Gestor y renderizador de los 16 artefactos del lore con calibración Leva */}
           <ArtifactsManager>

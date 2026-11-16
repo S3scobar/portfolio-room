@@ -60,6 +60,7 @@ export function ArtifactMesh({ artifact }: ArtifactMeshProps) {
   return (
     <group
       ref={meshRef}
+      name={`artifact-${artifact.id}`}
       position={position}
       rotation={rotation}
       scale={scale}

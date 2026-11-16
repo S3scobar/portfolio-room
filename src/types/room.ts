@@ -143,3 +143,64 @@ export interface AtmospherePostprocessing {
   vignette: { offset: number; darkness: number };
   toneMappingEnabled: boolean;
 }
+
+// ---------------------------------------------------------------------------
+// Sprint 2 (S2-T1/S2-T2): jugador, proximidad y escritorio
+// ---------------------------------------------------------------------------
+
+/**
+ * Estado del jugador dentro del store global. Convenciones:
+ * - Unidades en metros, ejes del mundo (x derecha, y arriba, z hacia el frente de la habitacion).
+ * - `playerRotationY` en radianes; yaw 0 = mira hacia +z, yaw PI = mira hacia -z (hacia el escritorio).
+ */
+export interface PlayerState {
+  /** Posicion de los pies del avatar. */
+  playerPosition: Vec3;
+  playerRotationY: number;
+  /**
+   * Objetivo interactuable mas cercano dentro del radio de interaccion, o null.
+   * `'desk-pc'` = zona del escritorio; cualquier otro valor es un `id` de `ROOM_LORE`
+   * (el gato Milo cuenta como `'photo-milo'`).
+   */
+  nearbyTargetId: string | null;
+  /** true cuando el avatar esta sentado frente al monitor (camara en modo `'desk'`). */
+  isAtDesk: boolean;
+  /** `id` de la app del Mini-OS abierta (de `PORTFOLIO_APPS`), o null. Solo puede estar abierta sentado. */
+  openAppId: string | null;
+}
+
+/** Punto de interes en el plano del suelo para el calculo de proximidad. */
+export interface PlayerTarget {
+  id: string;
+  /** [x, z] en metros. */
+  position: [number, number];
+  /** Alcance extra (m) sumado a `interactRadius` para objetos que el mobiliario impide acercar. */
+  reach?: number;
+}
+
+/** Parametros de movimiento y proximidad del jugador. */
+export interface PlayerConfig {
+  /** Velocidad al caminar (m/s). */
+  walkSpeed: number;
+  /** Rapidez del giro hacia el avance (1/s, mayor = mas brusco). */
+  turnSharpness: number;
+  /** Radio de colision del avatar (m); infla los obstaculos de `FLOOR_OBSTACLES`. */
+  radius: number;
+  /** Limites caminables del centro del avatar: [minX, minZ] y [maxX, maxZ]. */
+  boundsMin: [number, number];
+  boundsMax: [number, number];
+  /** Distancia maxima para activar `nearbyTargetId` (m). */
+  interactRadius: number;
+  /** Margen extra (m) que un objetivo ya activo conserva frente a uno nuevo, para evitar parpadeo. */
+  hysteresis: number;
+  /** Punto de aparicion [x, z] y orientacion inicial. */
+  spawn: [number, number];
+  spawnYaw: number;
+}
+
+/** Pose de camara (posicion, punto de mira y campo de vision) para los modos fijos. */
+export interface CameraPose {
+  position: Vec3;
+  target: Vec3;
+  fov: number;
+}
