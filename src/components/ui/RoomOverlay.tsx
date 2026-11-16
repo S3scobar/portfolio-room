@@ -72,14 +72,13 @@ export function RoomOverlay() {
 
   return (
     <>
-      {/* Banner superior de navegación / atmósfera */}
-      <div className="pointer-events-none fixed top-5 left-5 z-20 flex flex-col gap-1 text-zinc-100">
-        <h1 className="text-lg font-bold tracking-tight text-zinc-100 flex items-center gap-2 drop-shadow-md">
-          <span className="inline-block w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse" />
+      {/* Banner superior de navegación */}
+      <div className="pointer-events-none fixed top-5 left-5 z-20 flex flex-col gap-0.5 text-zinc-100">
+        <h1 className="text-lg font-bold tracking-tight text-zinc-100 drop-shadow-md">
           Santiago Escobar · Portfolio Room
         </h1>
         <p className="text-xs text-zinc-400 drop-shadow">
-          Habitación 3D Interactiva · Estética Mixtape &amp; Life is Strange
+          Habitación 3D Interactiva
         </p>
       </div>
 
